@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS:GO Case Battle Simulator - Линейная рулетка</title>
+    <title>CS:GO Case Battle Simulator - Полная версия</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
-    <meta name="description" content="Виртуальный симулятор с линейной рулеткой CS:GO кейсов. Игра с виртуальной валютой без реальных денег.">
+    <meta name="description" content="Виртуальный симулятор с выводом баланса и админ-панелью">
 </head>
 <body>
     <div class="container">
         <!-- Шапка -->
         <header>
             <h1>🎮 CS:GO Case Battle Simulator</h1>
-            <p class="subtitle">ЛИНЕЙНАЯ РУЛЕТКА • ПРЕДПРОСМОТР КЕЙСОВ • ВИРТУАЛЬНАЯ ВАЛЮТА</p>
+            <p class="subtitle">ВЫВОД БАЛАНСА • АДМИН-ПАНЕЛЬ • REAL-TIME • @zummer_pro</p>
         </header>
 
         <!-- Статистика игрока -->
         <div class="player-stats">
             <div class="stat-card">
                 <h3>💰 Баланс</h3>
-                <p class="stat-value" id="balance">10,000</p>
-                <span class="currency">виртуальных монет</span>
+                <p class="stat-value" id="balance">0</p>
+                <span class="currency" id="balance-status">монет</span>
             </div>
             <div class="stat-card">
                 <h3>🎒 Инвентарь</h3>
@@ -29,7 +29,7 @@
                 <span class="currency">предметов</span>
             </div>
             <div class="stat-card">
-                <h3>📊 Открыто кейсов</h3>
+                <h3>📊 Кейсов открыто</h3>
                 <p class="stat-value" id="cases-opened">0</p>
                 <span class="currency">всего</span>
             </div>
@@ -40,13 +40,35 @@
             </div>
         </div>
 
+        <!-- Кнопка вывода -->
+        <div class="withdraw-section">
+            <button class="btn btn-withdraw" onclick="showWithdrawalModal()">
+                💸 Вывести баланс
+            </button>
+            <p class="withdraw-info">Минимум: 1000 монет | Контакт админа: @zummer_pro</p>
+            <button class="btn btn-refresh" onclick="refreshAllData()">
+                🔄 Обновить данные
+            </button>
+        </div>
+
+        <!-- Админ-панель -->
+        <div class="admin-section" id="admin-section" style="display: none;">
+            <button class="btn btn-admin" onclick="showAdminPanel()">
+                ⚙️ Админ-панель
+            </button>
+            <button class="btn btn-admin-logout" onclick="adminLogout()">
+                👋 Выйти
+            </button>
+        </div>
+
         <!-- Раздел с кейсами -->
         <section class="cases-section">
             <h2>📦 Доступные кейсы</h2>
-            <p class="section-description">Нажмите на кейс, чтобы увидеть возможные выигрыши и открыть его</p>
+            <p class="section-description">Нажмите на кейс, чтобы увидеть возможные выигрыши. Открытие доступно при достаточном балансе.</p>
             
             <div class="cases-grid" id="cases-container">
-                <!-- Кейсы будут генерироваться через JS -->
+                <!-- Кейсы будут здесь -->
+                <div class="loading">Загрузка кейсов...</div>
             </div>
         </section>
 
@@ -54,13 +76,14 @@
         <div class="modal" id="preview-modal">
             <div class="modal-content">
                 <span class="close" onclick="closePreview()">&times;</span>
-                <h2 id="preview-title"></h2>
+                <h2 id="preview-title">Предпросмотр кейса</h2>
                 <p id="preview-description"></p>
-                <p>Стоимость: <span class="preview-price" id="preview-price"></span> монет</p>
+                <p>Стоимость: <span class="preview-price" id="preview-price">0</span> монет</p>
+                <p>Ваш баланс: <span id="preview-balance">0</span> монет</p>
                 
                 <h3>Возможные выигрыши:</h3>
                 <div class="preview-items" id="preview-items-container">
-                    <!-- Скины будут добавляться сюда -->
+                    <!-- Скины будут здесь -->
                 </div>
                 
                 <div class="modal-actions">
@@ -74,16 +97,13 @@
             </div>
         </div>
 
-        <!-- Экран линейной рулетки -->
+        <!-- Экран рулетки -->
         <div class="modal roulette-modal" id="roulette-modal">
             <div class="modal-content roulette-content">
                 <h2 id="roulette-title">🎰 Открываем кейс...</h2>
                 
-                <!-- Контейнер для рулетки -->
                 <div class="roulette-container">
-                    <div class="roulette-track" id="roulette-track">
-                        <!-- Скины будут добавляться динамически -->
-                    </div>
+                    <div class="roulette-track" id="roulette-track"></div>
                     <div class="roulette-pointer"></div>
                 </div>
                 
@@ -94,13 +114,130 @@
                     </div>
                 </div>
                 
-                <div class="roulette-result" id="roulette-result">
-                    <!-- Результат появится здесь -->
-                </div>
+                <div class="roulette-result" id="roulette-result"></div>
                 
                 <button class="btn btn-close-roulette" onclick="closeRoulette()" style="display: none;">
                     Забрать выигрыш
                 </button>
+            </div>
+        </div>
+
+        <!-- Модальное окно вывода -->
+        <div class="modal" id="withdrawal-modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeWithdrawalModal()">&times;</span>
+                <h2>💸 Заявка на вывод</h2>
+                
+                <div class="withdrawal-form">
+                    <div class="form-info">
+                        <p>Ваш баланс: <strong id="withdrawal-balance">0</strong> монет</p>
+                        <p>Максимально можно вывести: <strong id="withdrawal-max">0</strong> монет</p>
+                        <p>Минимальная сумма: <strong>1000</strong> монет</p>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label>Сумма вывода:</label>
+                        <input type="range" id="withdrawal-amount" min="1000" max="10000" step="1000" value="1000"
+                               oninput="updateWithdrawalAmount(this.value)">
+                        <span id="amount-value" class="amount-value">1000</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label>Ваш Telegram:</label>
+                        <input type="text" id="withdrawal-telegram" placeholder="@username" class="form-input">
+                    </div>
+                    
+                    <div class="form-notice">
+                        <p>⚠️ После подтверждения:</p>
+                        <ol>
+                            <li>Сумма спишется с вашего баланса</li>
+                            <li>Будет создана заявка</li>
+                            <li>Админ свяжется с вами в Telegram</li>
+                            <li>Отменить заявку может только админ</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" onclick="closeWithdrawalModal()">
+                            Отмена
+                        </button>
+                        <button class="btn btn-primary" onclick="submitWithdrawalRequest()">
+                            📨 Создать заявку
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Окно входа админа -->
+        <div class="modal" id="admin-login-modal">
+            <div class="modal-content">
+                <h2>🔐 Вход в админ-панель</h2>
+                <div class="login-form">
+                    <input type="text" id="admin-username" placeholder="Логин" class="form-input">
+                    <input type="password" id="admin-password" placeholder="Пароль" class="form-input">
+                    <button class="btn btn-primary" onclick="performAdminLogin()">
+                        Войти
+                    </button>
+                    <p class="login-error" id="login-error"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Админ-панель -->
+        <div class="modal" id="admin-panel-modal">
+            <div class="modal-content admin-panel-content">
+                <h2>⚙️ Админ-панель</h2>
+                
+                <div class="admin-tabs">
+                    <button class="admin-tab active" onclick="switchAdminTab('withdrawals')">
+                        📋 Заявки на вывод
+                    </button>
+                    <button class="admin-tab" onclick="switchAdminTab('players')">
+                        👥 Игроки
+                    </button>
+                    <button class="admin-tab" onclick="switchAdminTab('cases')">
+                        📦 Кейсы
+                    </button>
+                </div>
+                
+                <!-- Контент админ-панели -->
+                <div id="admin-content">
+                    <div id="tab-withdrawals" class="admin-tab-content active">
+                        <h3>Заявки на вывод</h3>
+                        <div class="requests-stats">
+                            <p>Всего заявок: <span id="total-requests">0</span></p>
+                            <p>На сумму: <span id="total-amount">0</span> монет</p>
+                            <p>Ожидают: <span id="pending-requests">0</span></p>
+                        </div>
+                        <div id="admin-withdrawal-requests" class="requests-list">
+                            <p>Загрузка заявок...</p>
+                        </div>
+                    </div>
+                    
+                    <div id="tab-players" class="admin-tab-content">
+                        <h3>Игроки</h3>
+                        <div id="admin-players-list">
+                            <p>Загрузка игроков...</p>
+                        </div>
+                    </div>
+                    
+                    <div id="tab-cases" class="admin-tab-content">
+                        <h3>Управление кейсами</h3>
+                        <div id="admin-cases-management">
+                            <p>Здесь можно управлять кейсами</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="admin-panel-actions">
+                    <button class="btn btn-secondary" onclick="closeAdminPanel()">
+                        Закрыть
+                    </button>
+                    <button class="btn btn-refresh" onclick="refreshAdminData()">
+                        🔄 Обновить
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -109,13 +246,16 @@
             <h2>🎒 Ваш инвентарь</h2>
             <div class="inventory-controls">
                 <button class="btn btn-sort" onclick="sortInventory('rarity')">
-                    Сортировать по редкости
+                    По редкости
                 </button>
                 <button class="btn btn-sort" onclick="sortInventory('value')">
-                    Сортировать по ценности
+                    По ценности
                 </button>
                 <button class="btn btn-sort" onclick="sortInventory('newest')">
-                    Новые сначала
+                    Новые
+                </button>
+                <button class="btn btn-sell-all" onclick="sellAllSkins()">
+                    💰 Продать всё (70%)
                 </button>
             </div>
             <div class="inventory-grid" id="inventory-container">
@@ -123,34 +263,23 @@
             </div>
         </section>
 
-        <!-- Достижения -->
-        <section class="achievements-section">
-            <h2>🏆 Достижения</h2>
-            <div class="achievements-grid" id="achievements-container">
-                <!-- Достижения будут здесь -->
-            </div>
-        </section>
-
         <!-- Предупреждение -->
         <div class="warning">
             <h3>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h3>
-            <p>Это <strong>виртуальный симулятор для развлечения</strong>. Здесь нет:</p>
-            <ul>
-                <li>✅ Реальных денег или ставок</li>
-                <li>✅ Связи с Steam или реальными скинами</li>
-                <li>✅ Возможности выиграть что-либо реальное</li>
-                <li>✅ Азартной игры на деньги</li>
-            </ul>
-            <p>Проект создан в образовательных целях. Скины и валюта — полностью виртуальные.</p>
+            <p>Это <strong>виртуальный симулятор</strong>. Все операции выполняются через Cloudflare Worker.</p>
+            <p>Для вывода: создайте заявку → укажите Telegram → дождитесь ответа от @zummer_pro</p>
         </div>
 
         <!-- Футер -->
         <footer>
-            <p>CS:GO Case Battle Simulator © 2024 • Линейная рулетка • Создано для образовательных целей</p>
-            <p>Это не официальный проект Valve или Steam. Counter-Strike и CS:GO являются товарными знаками Valve Corporation.</p>
+            <p>CS:GO Case Battle Simulator © 2024 • Cloudflare Worker • Supabase</p>
+            <p>Для связи с админом: @zummer_pro | Баланс обновляется в реальном времени</p>
         </footer>
     </div>
 
+    <!-- Подключение Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
