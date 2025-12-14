@@ -1139,6 +1139,778 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+
+// ================================
+// АДМИН-ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ КОНТЕНТОМ
+// ================================
+
+// Загрузка пользователей для админ-панели
+async function loadUsers() {
+    if (!isAdmin()) {
+        showNotification('Требуются права администратора', 'error');
+        return;
+    }
+    
+    try {
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const container = document.getElementById('users-list');
+        if (!container) return;
+        
+        if (!users || users.length === 0) {
+            container.innerHTML = '<p>Нет пользователей</p>';
+            return;
+        }
+        
+        let html = '';
+        users.forEach(user => {
+            html += `
+                <div class="user-card">
+                    <div class="user-info">
+                        <div class="user-details">
+                            <div class="user-email">${user.email}</div>
+                            <div class="user-balance">Баланс: ${user.balance?.toLocaleString() || 0} монет</div>
+                            <span class="user-role ${user.role}">${user.role === 'admin' ? 'Администратор' : 'Пользователь'}</span>
+                        </div>
+                        <div class="user-actions">
+                            <button class="btn-edit-small" onclick="editUser('${user.id}')">
+                                ✏️
+                            </button>
+                            <button class="btn-delete-small" onclick="deleteUser('${user.id}', '${user.email}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки пользователей:', error);
+        showNotification('Ошибка загрузки пользователей', 'error');
+    }
+}
+
+// Загрузка кейсов для админ-панели
+async function loadCasesForAdmin() {
+    if (!isAdmin()) return;
+    
+    try {
+        const casesData = await window.supabaseClient.getCasesFromDB();
+        const container = document.getElementById('cases-list');
+        
+        if (!container) return;
+        
+        if (!casesData || casesData.length === 0) {
+            container.innerHTML = '<p>Нет кейсов</p>';
+            return;
+        }
+        
+        let html = '';
+        casesData.forEach(cs => {
+            html += `
+                <div class="case-card">
+                    <div class="case-info">
+                        <div class="case-details">
+                            <div class="case-name">${cs.emoji} ${cs.name}</div>
+                            <div class="case-price">Цена: ${cs.price} монет</div>
+                            <span class="case-rarity">Предметов: ${cs.case_items?.length || 0}</span>
+                        </div>
+                        <div class="case-actions">
+                            <button class="btn-edit-small" onclick="editCase(${cs.id})">
+                                ✏️
+                            </button>
+                            <button class="btn-delete-small" onclick="deleteCase(${cs.id}, '${cs.name}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки кейсов:', error);
+        showNotification('Ошибка загрузки кейсов', 'error');
+    }
+}
+
+// Загрузка скинов для админ-панели
+async function loadSkinsForAdmin() {
+    if (!isAdmin()) return;
+    
+    try {
+        const skinsData = await window.supabaseClient.getSkinsFromDB();
+        const container = document.getElementById('skins-list');
+        
+        if (!container) return;
+        
+        if (!skinsData || skinsData.length === 0) {
+            container.innerHTML = '<p>Нет скинов</p>';
+            return;
+        }
+        
+        let html = '';
+        skinsData.forEach(skin => {
+            html += `
+                <div class="skin-card">
+                    <div class="skin-info">
+                        <div class="skin-details">
+                            <div class="skin-name">${skin.emoji} ${skin.name}</div>
+                            <div class="skin-value">Ценность: ${skin.value} монет</div>
+                            <span class="skin-rarity" style="color: ${skin.color}">
+                                ${getRarityName(skin.rarity)}
+                            </span>
+                        </div>
+                        <div class="skin-actions">
+                            <button class="btn-edit-small" onclick="editSkin(${skin.id})">
+                                ✏️
+                            </button>
+                            <button class="btn-delete-small" onclick="deleteSkin(${skin.id}, '${skin.name}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки скинов:', error);
+        showNotification('Ошибка загрузки скинов', 'error');
+    }
+}
+
+// Создание нового кейса
+async function createCase(event) {
+    event.preventDefault();
+    
+    if (!isAdmin()) {
+        showNotification('Требуются права администратора', 'error');
+        return;
+    }
+    
+    try {
+        const name = document.getElementById('case-name').value;
+        const price = parseInt(document.getElementById('case-price').value);
+        const emoji = document.getElementById('case-emoji').value;
+        const description = document.getElementById('case-description').value;
+        const color = document.getElementById('case-color').value;
+        
+        // Собираем предметы кейса
+        const items = [];
+        const itemRows = document.querySelectorAll('.case-item-row');
+        
+        itemRows.forEach(row => {
+            const skinId = row.querySelector('.case-item-skin').value;
+            const chance = parseFloat(row.querySelector('.case-item-chance').value);
+            
+            if (skinId && chance > 0) {
+                items.push({
+                    skin_id: parseInt(skinId),
+                    chance: chance
+                });
+            }
+        });
+        
+        if (items.length === 0) {
+            showNotification('Добавьте хотя бы один предмет в кейс', 'error');
+            return;
+        }
+        
+        // Проверяем, что сумма шансов = 100
+        const totalChance = items.reduce((sum, item) => sum + item.chance, 0);
+        if (Math.abs(totalChance - 100) > 0.01) {
+            showNotification(`Сумма шансов должна быть 100% (сейчас: ${totalChance.toFixed(2)}%)`, 'error');
+            return;
+        }
+        
+        // Создаем кейс через Worker
+        const response = await fetch(`${WORKER_URL}/api/create-case`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            },
+            body: JSON.stringify({
+                name: name,
+                price: price,
+                emoji: emoji,
+                description: description,
+                color: color,
+                items: items
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Кейс "${name}" создан успешно!`, 'success');
+            closeModal('create-case-modal');
+            loadCasesForAdmin();
+            
+            // Перезагружаем кейсы на главной странице
+            if (window.loadDataFromSupabase) {
+                await loadDataFromSupabase();
+                renderCases();
+            }
+        } else {
+            throw new Error(result.error || 'Ошибка создания кейса');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка создания кейса:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+// Создание нового скина
+async function createSkin(event) {
+    event.preventDefault();
+    
+    if (!isAdmin()) {
+        showNotification('Требуются права администратора', 'error');
+        return;
+    }
+    
+    try {
+        const name = document.getElementById('skin-name').value;
+        const rarity = document.getElementById('skin-rarity').value;
+        const value = parseInt(document.getElementById('skin-value').value);
+        const emoji = document.getElementById('skin-emoji').value;
+        const color = document.getElementById('skin-color').value;
+        
+        // Создаем скин через Worker
+        const response = await fetch(`${WORKER_URL}/api/create-skin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            },
+            body: JSON.stringify({
+                name: name,
+                rarity: rarity,
+                value: value,
+                emoji: emoji,
+                color: color
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Скин "${name}" создан успешно!`, 'success');
+            closeModal('create-skin-modal');
+            loadSkinsForAdmin();
+            
+                       // Перезагружаем скины на главной странице
+            if (window.loadDataFromSupabase) {
+                await loadDataFromSupabase();
+                renderInventory();
+            }
+        } else {
+            throw new Error(result.error || 'Ошибка создания скина');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка создания скина:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+// Создание нового пользователя (админ)
+async function createUser(event) {
+    event.preventDefault();
+    
+    if (!isAdmin()) {
+        showNotification('Требуются права администратора', 'error');
+        return;
+    }
+    
+    try {
+        const email = document.getElementById('user-email').value;
+        const password = document.getElementById('user-password').value;
+        const confirm = document.getElementById('user-confirm').value;
+        const role = document.getElementById('user-role').value;
+        const balance = parseInt(document.getElementById('user-balance').value) || 10000;
+        
+        // Валидация
+        if (!email || !password || !confirm) {
+            showNotification('Заполните все поля', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showNotification('Пароль должен содержать минимум 6 символов', 'error');
+            return;
+        }
+        
+        if (password !== confirm) {
+            showNotification('Пароли не совпадают', 'error');
+            return;
+        }
+        
+        // Создаем пользователя через Worker
+        const response = await fetch(`${WORKER_URL}/api/create-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password,
+                role: role,
+                balance: balance
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Пользователь "${email}" создан успешно!`, 'success');
+            closeModal('create-user-modal');
+            loadUsers();
+        } else {
+            throw new Error(result.error || 'Ошибка создания пользователя');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка создания пользователя:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+// Удаление пользователя
+async function deleteUser(userId, userEmail) {
+    if (!isAdmin() || !confirm(`Удалить пользователя ${userEmail}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${WORKER_URL}/api/delete-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            },
+            body: JSON.stringify({
+                user_id: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Пользователь ${userEmail} удален`, 'success');
+            loadUsers();
+        } else {
+            throw new Error(result.error || 'Ошибка удаления пользователя');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка удаления пользователя:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+// Удаление кейса
+async function deleteCase(caseId, caseName) {
+    if (!isAdmin() || !confirm(`Удалить кейс "${caseName}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${WORKER_URL}/api/delete-case`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            },
+            body: JSON.stringify({
+                case_id: caseId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Кейс "${caseName}" удален`, 'success');
+            loadCasesForAdmin();
+            
+            // Перезагружаем кейсы на главной странице
+            if (window.loadDataFromSupabase) {
+                await loadDataFromSupabase();
+                renderCases();
+            }
+        } else {
+            throw new Error(result.error || 'Ошибка удаления кейса');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка удаления кейса:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+// Удаление скина
+async function deleteSkin(skinId, skinName) {
+    if (!isAdmin() || !confirm(`Удалить скин "${skinName}"?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${WORKER_URL}/api/delete-skin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            },
+            body: JSON.stringify({
+                skin_id: skinId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`Скин "${skinName}" удален`, 'success');
+            loadSkinsForAdmin();
+            
+            // Перезагружаем скины на главной странице
+            if (window.loadDataFromSupabase) {
+                await loadDataFromSupabase();
+                renderInventory();
+            }
+        } else {
+            throw new Error(result.error || 'Ошибка удаления скина');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка удаления скина:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+}
+
+// Показать модальное окно создания кейса
+function showCreateCaseModal() {
+    if (!isAdmin()) return;
+    
+    // Сбросить форму
+    document.getElementById('case-form').reset();
+    document.getElementById('case-color').value = '#4cc9f0';
+    document.getElementById('case-items-container').innerHTML = '';
+    
+    // Добавить первый предмет
+    addCaseItem();
+    
+    document.getElementById('create-case-modal').style.display = 'block';
+}
+
+// Добавить поле для предмета в кейс
+async function addCaseItem() {
+    const container = document.getElementById('case-items-container');
+    
+    // Загружаем список скинов для выбора
+    const skins = await window.supabaseClient.getSkinsFromDB();
+    
+    const row = document.createElement('div');
+    row.className = 'case-item-row';
+    
+    let options = '<option value="">Выберите скин</option>';
+    skins.forEach(skin => {
+        options += `<option value="${skin.id}">${skin.emoji} ${skin.name} (${skin.value} монет)</option>`;
+    });
+    
+    row.innerHTML = `
+        <select class="case-item-skin form-input" required>
+            ${options}
+        </select>
+        <input type="number" class="case-item-chance form-input" 
+               placeholder="Шанс %" min="0.01" max="100" step="0.01" required>
+        <button type="button" class="btn-remove-item" onclick="removeCaseItem(this)">
+            ❌
+        </button>
+    `;
+    
+    container.appendChild(row);
+}
+
+// Удалить поле предмета из кейса
+function removeCaseItem(button) {
+    button.parentElement.remove();
+}
+
+// Показать модальное окно создания скина
+function showCreateSkinModal() {
+    if (!isAdmin()) return;
+    
+    // Сбросить форму
+    document.getElementById('skin-form').reset();
+    document.getElementById('skin-color').value = '#b0b0b0';
+    
+    document.getElementById('create-skin-modal').style.display = 'block';
+}
+
+// Показать модальное окно создания пользователя
+function showCreateUserModal() {
+    if (!isAdmin()) return;
+    
+    document.getElementById('user-form').reset();
+    document.getElementById('user-balance').value = '10000';
+    
+    document.getElementById('create-user-modal').style.display = 'block';
+}
+
+// Закрыть модальное окно
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Проверка, является ли пользователь админом
+function isAdmin() {
+    const user = getCurrentUser();
+    return user && user.role === 'admin';
+}
+
+// Загрузка статистики сайта
+async function loadSiteStats() {
+    if (!isAdmin()) return;
+    
+    try {
+        const response = await fetch(`${WORKER_URL}/api/site-stats`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('stats-users').textContent = result.stats.users || 0;
+            document.getElementById('stats-cases').textContent = result.stats.cases || 0;
+            document.getElementById('stats-skins').textContent = result.stats.skins || 0;
+            document.getElementById('stats-withdrawals').textContent = result.stats.withdrawals || 0;
+            
+            // Обновляем график статистики (если есть Chart.js)
+            if (window.Chart && result.stats.chartData) {
+                updateStatsChart(result.stats.chartData);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+    }
+}
+
+// Обновление графика статистики
+function updateStatsChart(chartData) {
+    const ctx = document.getElementById('statsCanvas').getContext('2d');
+    
+    if (window.statsChart) {
+        window.statsChart.destroy();
+    }
+    
+    window.statsChart = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Переключение вкладок админ-панели
+function switchAdminTab(tabName) {
+    // Убираем активный класс со всех вкладок
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.admin-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Активируем выбранную вкладку
+    const activeTab = document.querySelector(`.admin-tab[onclick*="${tabName}"]`);
+    const activeContent = document.getElementById(`tab-${tabName}`);
+    
+    if (activeTab) activeTab.classList.add('active');
+    if (activeContent) activeContent.classList.add('active');
+    
+    // Загружаем данные для выбранной вкладки
+    switch (tabName) {
+        case 'users':
+            loadUsers();
+            break;
+        case 'cases':
+            loadCasesForAdmin();
+            break;
+        case 'skins':
+            loadSkinsForAdmin();
+            break;
+        case 'stats':
+            loadSiteStats();
+            break;
+    }
+}
+
+// ================================
+// ИНИЦИАЛИЗАЦИЯ И ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
+// ================================
+
+// Обновить интерфейс авторизации
+function updateAuthUI() {
+    const authButton = document.getElementById('auth-button');
+    const userProfile = document.getElementById('user-profile');
+    const currentUser = getCurrentUser();
+    
+    if (currentUser) {
+        // Показываем профиль пользователя
+        if (authButton) authButton.style.display = 'none';
+        
+        if (userProfile) {
+            userProfile.style.display = 'flex';
+            document.getElementById('user-email-display').textContent = currentUser.email;
+            document.getElementById('user-balance-display').textContent = 
+                formatNumber(currentUser.balance || 0);
+            
+            // Показываем админ-панель для админов
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-section').style.display = 'flex';
+            }
+        }
+    } else {
+        // Показываем кнопку входа
+        if (authButton) authButton.style.display = 'block';
+        if (userProfile) userProfile.style.display = 'none';
+        document.getElementById('admin-section').style.display = 'none';
+    }
+}
+
+// Проверить авторизацию при загрузке
+async function checkAuthOnLoad() {
+    try {
+        // Проверяем, есть ли сохраненный токен
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('current_user');
+        
+        if (token && userData) {
+            // Проверяем валидность токена
+            const { data, error } = await supabase.auth.getUser(token);
+            
+            if (error) {
+                // Токен невалиден, очищаем
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('current_user');
+            }
+        }
+        
+        updateAuthUI();
+        
+    } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('current_user');
+        updateAuthUI();
+    }
+}
+
+// Обновленная инициализация игры
+async function initGame() {
+    console.log('🚀 Инициализация игры...');
+    
+    try {
+        // 1. Проверяем авторизацию
+        await checkAuthOnLoad();
+        
+        // 2. Загружаем данные только если пользователь авторизован
+        if (getCurrentUser()) {
+            await loadDataFromSupabase();
+            
+            // Получаем данные игрока
+            gameState.player = await window.supabaseClient.getOrCreatePlayer();
+            if (gameState.player) {
+                gameState.balance = gameState.player.balance;
+                gameState.inventory = await window.supabaseClient.getPlayerInventory(gameState.player.device_id);
+            }
+            
+            updateUI();
+            renderCases();
+            renderInventory();
+            updateBonusTimer();
+            
+            // Запускаем обновление баланса
+            setInterval(() => refreshBalance(), 30000);
+        }
+        
+        // 3. Запускаем таймер бонуса
+        setInterval(updateBonusTimer, 1000);
+        
+        console.log('✅ Игра инициализирована');
+        
+    } catch (error) {
+        console.error('❌ Ошибка инициализации:', error);
+        showNotification('Ошибка загрузки игры', 'error');
+    }
+}
+
+// ================================
+// ЭКСПОРТ ФУНКЦИЙ
+// ================================
+
+// Экспортируем новые функции
+window.showCreateCaseModal = showCreateCaseModal;
+window.showCreateSkinModal = showCreateSkinModal;
+window.showCreateUserModal = showCreateUserModal;
+window.addCaseItem = addCaseItem;
+window.removeCaseItem = removeCaseItem;
+window.createCase = createCase;
+window.createSkin = createSkin;
+window.createUser = createUser;
+window.deleteUser = deleteUser;
+window.deleteCase = deleteCase;
+window.deleteSkin = deleteSkin;
+window.loadUsers = loadUsers;
+window.loadCasesForAdmin = loadCasesForAdmin;
+window.loadSkinsForAdmin = loadSkinsForAdmin;
+window.loadSiteStats = loadSiteStats;
+window.switchAdminTab = switchAdminTab;
+window.closeModal = closeModal;
+
+// Проверяем, является ли пользователь админом при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    // Если пользователь админ, показываем кнопку админ-панели
+    if (isAdmin()) {
+        document.getElementById('admin-section').style.display = 'flex';
+    }
+});
+
+
+
+
 // Экспорт функций в глобальную область видимости
 window.previewCase = previewCase;
 window.closePreview = closePreview;

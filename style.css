@@ -1118,3 +1118,262 @@ footer {
     margin-top: 20px;
     text-align: center;
 }
+
+
+/* Стили для авторизации */
+.auth-modal .modal-content {
+    max-width: 400px;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 15px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+}
+
+.auth-tab.active {
+    color: #4cc9f0;
+    border-bottom-color: #4cc9f0;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.auth-form h3 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.auth-form .form-input {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.auth-error {
+    color: #f72585;
+    margin-top: 15px;
+    text-align: center;
+    min-height: 20px;
+}
+
+/* Кнопка входа в шапке */
+.auth-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.auth-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Расширенная админ-панель */
+.admin-actions {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.users-list, .cases-list, .skins-list {
+    margin: 20px 0;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.user-card, .case-card, .skin-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-info, .case-info, .skin-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-details, .case-details, .skin-details {
+    flex: 1;
+}
+
+.user-email, .case-name, .skin-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.user-balance, .case-price, .skin-value {
+    color: #4cc9f0;
+    font-weight: bold;
+}
+
+.user-role, .case-rarity, .skin-rarity {
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 0.85em;
+    background: rgba(76, 201, 240, 0.1);
+}
+
+.user-role.admin {
+    background: rgba(247, 37, 133, 0.1);
+    color: #f72585;
+}
+
+.user-actions, .case-actions, .skin-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-edit-small, .btn-delete-small {
+    padding: 5px 10px;
+    font-size: 0.85em;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-edit-small {
+    background: rgba(76, 201, 240, 0.2);
+    border: 1px solid #4cc9f0;
+    color: #4cc9f0;
+}
+
+.btn-delete-small {
+    background: rgba(247, 37, 133, 0.2);
+    border: 1px solid #f72585;
+    color: #f72585;
+}
+
+/* Статистика в админке */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.stats-grid .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-grid .stat-card h4 {
+    color: #aaa;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.stat-number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #4cc9f0;
+}
+
+.stats-chart {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+/* Формы создания */
+#case-items-container {
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.case-item-row {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    align-items: center;
+}
+
+.case-item-row select,
+.case-item-row input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.btn-remove-item {
+    background: rgba(247, 37, 133, 0.2);
+    border: 1px solid #f72585;
+    color: #f72585;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Информация о текущем пользователе */
+.user-profile {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4cc9f0, #4361ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.user-name {
+    font-weight: bold;
+}
+
+.btn-logout {
+    background: rgba(247, 37, 133, 0.1);
+    border: 1px solid #f72585;
+    color: #f72585;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}

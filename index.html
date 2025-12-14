@@ -277,6 +277,219 @@
         </footer>
     </div>
 
+    <!-- Добавьте после футера, перед закрывающим </body> -->
+
+<!-- Модальное окно регистрации/входа -->
+<div class="modal" id="auth-modal">
+    <div class="modal-content">
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
+            <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
+        </div>
+        
+        <!-- Форма входа -->
+        <div id="login-form" class="auth-form active">
+            <h3>Вход в аккаунт</h3>
+            <input type="email" id="login-email" class="form-input" placeholder="Email" required>
+            <input type="password" id="login-password" class="form-input" placeholder="Пароль" required>
+            <button class="btn btn-primary" onclick="loginUser()">Войти</button>
+            <p class="auth-error" id="login-error"></p>
+        </div>
+        
+        <!-- Форма регистрации -->
+        <div id="register-form" class="auth-form">
+            <h3>Создание аккаунта</h3>
+            <input type="email" id="register-email" class="form-input" placeholder="Email" required>
+            <input type="password" id="register-password" class="form-input" placeholder="Пароль (минимум 6 символов)" required>
+            <input type="password" id="register-confirm" class="form-input" placeholder="Подтвердите пароль" required>
+            <button class="btn btn-primary" onclick="registerUser()">Создать аккаунт</button>
+            <p class="auth-error" id="register-error"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Расширенная админ-панель (добавить к существующей) -->
+<div class="modal" id="admin-panel-modal">
+    <div class="modal-content admin-panel-content">
+        <h2>⚙️ Админ-панель</h2>
+        
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="switchAdminTab('withdrawals')">📋 Заявки</button>
+            <button class="admin-tab" onclick="switchAdminTab('users')">👥 Пользователи</button>
+            <button class="admin-tab" onclick="switchAdminTab('cases')">📦 Кейсы</button>
+            <button class="admin-tab" onclick="switchAdminTab('skins')">🎨 Скины</button>
+            <button class="admin-tab" onclick="switchAdminTab('stats')">📊 Статистика</button>
+        </div>
+        
+        <div id="admin-content">
+            <!-- Заявки на вывод (уже есть) -->
+            <div id="tab-withdrawals" class="admin-tab-content active">
+                <!-- ... существующий код ... -->
+            </div>
+            
+            <!-- Управление пользователями -->
+            <div id="tab-users" class="admin-tab-content">
+                <h3>Управление пользователями</h3>
+                <div class="admin-actions">
+                    <button class="btn btn-primary" onclick="showCreateUserModal()">
+                        👤 Добавить пользователя
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadUsers()">
+                        🔄 Обновить список
+                    </button>
+                </div>
+                <div id="users-list" class="users-list">
+                    <p>Загрузка пользователей...</p>
+                </div>
+            </div>
+            
+            <!-- Управление кейсами -->
+            <div id="tab-cases" class="admin-tab-content">
+                <h3>Управление кейсами</h3>
+                <div class="admin-actions">
+                    <button class="btn btn-primary" onclick="showCreateCaseModal()">
+                        📦 Создать кейс
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadCasesForAdmin()">
+                        🔄 Обновить список
+                    </button>
+                </div>
+                <div id="cases-list" class="cases-list">
+                    <p>Загрузка кейсов...</p>
+                </div>
+            </div>
+            
+            <!-- Управление скинами -->
+            <div id="tab-skins" class="admin-tab-content">
+                <h3>Управление скинами</h3>
+                <div class="admin-actions">
+                    <button class="btn btn-primary" onclick="showCreateSkinModal()">
+                        🎨 Добавить скин
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadSkinsForAdmin()">
+                        🔄 Обновить список
+                    </button>
+                </div>
+                <div id="skins-list" class="skins-list">
+                    <p>Загрузка скинов...</p>
+                </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div id="tab-stats" class="admin-tab-content">
+                <h3>Статистика сайта</h3>
+                <div class="stats-grid" id="site-stats">
+                    <div class="stat-card">
+                        <h4>👥 Пользователей</h4>
+                        <p class="stat-number" id="stats-users">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>📦 Кейсов</h4>
+                        <p class="stat-number" id="stats-cases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>🎨 Скинов</h4>
+                        <p class="stat-number" id="stats-skins">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>💸 Выводов</h4>
+                        <p class="stat-number" id="stats-withdrawals">0</p>
+                    </div>
+                </div>
+                <div class="stats-chart" id="stats-chart">
+                    <canvas id="statsCanvas" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Модальные окна для создания -->
+        <div class="modal" id="create-case-modal">
+            <div class="modal-content">
+                <h3>📦 Создание нового кейса</h3>
+                <form id="case-form" onsubmit="createCase(event)">
+                    <input type="text" id="case-name" class="form-input" placeholder="Название кейса" required>
+                    <input type="number" id="case-price" class="form-input" placeholder="Цена (монеты)" required min="1">
+                    <input type="text" id="case-emoji" class="form-input" placeholder="Emoji (например: 📦)" required>
+                    <textarea id="case-description" class="form-input" placeholder="Описание" rows="3"></textarea>
+                    <input type="color" id="case-color" value="#4cc9f0">
+                    <label>Цвет кейса</label>
+                    
+                    <h4>Предметы в кейсе:</h4>
+                    <div id="case-items-container">
+                        <!-- Предметы будут добавляться здесь -->
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addCaseItem()">
+                        ➕ Добавить предмет
+                    </button>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('create-case-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Создать кейс
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="modal" id="create-skin-modal">
+            <div class="modal-content">
+                <h3>🎨 Создание нового скина</h3>
+                <form id="skin-form" onsubmit="createSkin(event)">
+                    <input type="text" id="skin-name" class="form-input" placeholder="Название скина" required>
+                    <select id="skin-rarity" class="form-input" required>
+                        <option value="common">Обычный</option>
+                        <option value="uncommon">Необычный</option>
+                        <option value="rare">Редкий</option>
+                        <option value="epic">Эпический</option>
+                        <option value="legendary">Легендарный</option>
+                    </select>
+                    <input type="number" id="skin-value" class="form-input" placeholder="Ценность (монеты)" required min="1">
+                    <input type="text" id="skin-emoji" class="form-input" placeholder="Emoji (например: 🔫)" required>
+                    <input type="color" id="skin-color" value="#b0b0b0">
+                    <label>Цвет редкости</label>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('create-skin-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Создать скин
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="modal" id="create-user-modal">
+            <div class="modal-content">
+                <h3>👤 Создание пользователя</h3>
+                <form id="user-form" onsubmit="createUser(event)">
+                    <input type="email" id="user-email" class="form-input" placeholder="Email" required>
+                    <input type="password" id="user-password" class="form-input" placeholder="Пароль" required>
+                    <input type="password" id="user-confirm" class="form-input" placeholder="Подтвердите пароль" required>
+                    <select id="user-role" class="form-input">
+                        <option value="user">Пользователь</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                    <input type="number" id="user-balance" class="form-input" placeholder="Начальный баланс" value="10000">
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('create-user-modal')">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Создать пользователя
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
     <!-- Подключение Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
