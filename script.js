@@ -1,49 +1,518 @@
-// Конфиг
-const SB_URL='https://jttsgizkuyipolcnvanc.supabase.co',SB_KEY='sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp',supabase=window.supabase.createClient(SB_URL,SB_KEY);
-let state={user:null,balance:0,inventory:[]},cases=[],skins=[],selectedCase=null,selectedCaseId=null,currentCaseSkins=[];
+// script.js - Исправленная версия
 
-async function init(){console.log('Инициализация...');await checkAuth();await loadData();if(state.user)await loadPlayer();setupModalListeners();updateUI();}
-function setupModalListeners(){document.querySelectorAll('.modal').forEach(e=>{e.addEventListener('click',function(t){t.target===this&&(this.style.display='none')})});}
+const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
 
-// Аутентификация
-async function checkAuth(){try{const{data:e}=await supabase.auth.getSession();if(e.session){state.user=e.session.user,document.getElementById('auth-btn').style.display='none',document.getElementById('logout-btn').style.display='block',document.getElementById('user-email').textContent=state.user.email;const{data:t}=await supabase.from('users').select('role').eq('id',state.user.id).single();t?.role==='admin'&&(document.getElementById('admin-btn').style.display='block')}else document.getElementById('auth-btn').style.display='block',document.getElementById('logout-btn').style.display='none',document.getElementById('admin-btn').style.display='none',document.getElementById('user-email').textContent='Гость'}catch(t){console.error('Ошибка auth:',t)}}async function logout(){await supabase.auth.signOut(),location.reload()}
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Данные
-async function loadData(){try{const[{data:e},{data:t}]=await Promise.all([supabase.from('cases').select('*'),supabase.from('skins').select('*')]);cases=e||[],skins=t||[],renderCases()}catch(a){console.error('Ошибка загрузки:',a)}}async function loadPlayer(){if(!state.user)return;const{data:e}=await supabase.from('users').select('balance').eq('id',state.user.id).single();e&&(state.balance=e.balance);const{data:t}=await supabase.from('player_inventory').select('skin_id').eq('player_id',state.user.id);state.inventory=t||[],updateUI(),renderInventory()}
+let currentUser = null;
+let selectedCaseId = null;
+let draggedSkinId = null;
 
-// UI
-function updateUI(){document.getElementById('balance').textContent=state.balance,document.getElementById('inventory').textContent=state.inventory.length}function renderCases(){const e=document.getElementById('cases');e&&(e.innerHTML=cases.length?cases.map(e=>`<div class="case" onclick="previewCase(${e.id})"><h3>${e.emoji||'📦'} ${e.name}</h3><p>${e.price} монет</p></div>`).join(''):'<p>Кейсы отсутствуют</p>')}function renderInventory(){const e=document.getElementById('inventory-list');e&&(e.innerHTML=state.inventory.length?state.inventory.map(e=>{const t=skins.find(t=>t.id===e.skin_id);return`<div class="skin">${t?.name||'Скин'} #${e.skin_id}</div>`}).join(''):'<p>Инвентарь пуст</p>')}
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+});
 
-// Кейсы
-function previewCase(e){selectedCase=cases.find(t=>t.id===e);if(!state.user)return alert('Войдите для открытия кейсов'),showLogin();document.getElementById('preview-title').textContent=selectedCase.name,document.getElementById('preview-price').textContent=`Цена: ${selectedCase.price} монет`,document.getElementById('preview-modal').style.display='block'}async function openCase(){if(!selectedCase||!state.user)return alert('Ошибка');if(state.balance<selectedCase.price)return alert('Недостаточно средств'),closeModal('preview-modal');try{const e=await fetch('https://mute-night-5909.zummer-max405.workers.dev/api/open-case',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:state.user.id,case_id:selectedCase.id,case_price:selectedCase.price})}),t=await e.json();t.success?(state.balance=t.newBalance,updateUI(),alert('Выиграли: '+(t.skin||'скин')),closeModal('preview-modal'),await loadPlayer()):alert('Ошибка: '+(t.error||'неизвестно'))}catch(a){alert('Ошибка соединения')}}
+async function init() {
+    // Проверяем авторизацию
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        currentUser = user;
+        updateUI();
+        loadCases();
+        loadInventory();
+        loadWithdrawals();
+    } else {
+        updateUI();
+        loadCases();
+    }
+    
+    // Инициализация навигации
+    initNavigation();
+}
 
-// Админка
-async function adminPanel(){if(!state.user)return;document.getElementById('admin-modal').style.display='block';const{data:e}=await supabase.from('users').select('role').eq('id',state.user.id).single();if(e?.role!=='admin')return document.getElementById('admin-content').innerHTML='<p>Нет прав администратора</p>';await loadAdminData()}async function loadAdminData(){await Promise.all([loadAdminCases(),loadAdminSkins()])}
+function initNavigation() {
+    // Активируем первую вкладку
+    showSection('cases-section');
+}
 
-// Загрузка данных для админки
-async function loadAdminCases(){try{const{data:e}=await supabase.from('cases').select('*').order('id'),t=document.getElementById('admin-cases-list');t&&(t.innerHTML=e.map(e=>`<div class="admin-case-item ${selectedCaseId===e.id?'selected':''}" onclick="selectAdminCase(${e.id})"><div style="font-size:24px">${e.emoji||'📦'}</div><div>${e.name}</div><div style="font-size:.8em">${e.price} монет</div></div>`).join(''))}catch(t){console.error('Ошибка загрузки кейсов:',t)}}async function selectAdminCase(e){selectedCaseId=e;const{data:t}=await supabase.from('cases').select('*').eq('id',e).single();if(t){document.getElementById('selected-case-info').innerHTML=`<h4>${t.emoji||'📦'} ${t.name}</h4><p>Цена: ${t.price} монет</p>`;await loadCaseSkins(e)}}
+function updateUI() {
+    const userEmail = document.getElementById('user-email');
+    const authBtn = document.getElementById('auth-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const adminBtn = document.getElementById('admin-btn');
+    const balance = document.getElementById('balance');
+    const inventoryCount = document.getElementById('inventory-count');
+    
+    if (currentUser) {
+        userEmail.textContent = currentUser.email;
+        authBtn.style.display = 'none';
+        logoutBtn.style.display = 'flex';
+        
+        // Проверяем админские права
+        checkAdmin();
+        
+        // Загружаем баланс и инвентарь
+        loadUserData();
+    } else {
+        userEmail.textContent = 'Гость';
+        authBtn.style.display = 'flex';
+        logoutBtn.style.display = 'none';
+        adminBtn.style.display = 'none';
+        balance.textContent = '0';
+        inventoryCount.textContent = '0';
+    }
+}
 
-async function loadAdminSkins(){try{const{data:e}=await supabase.from('skins').select('*').order('id'),t=document.getElementById('admin-skins-list');t&&(t.innerHTML=e.map(e=>`<div class="admin-skin-item" draggable="true" ondragstart="dragStart(event,${e.id})" ondragend="dragEnd(event)" data-id="${e.id}" title="${e.name} - ${e.price} монет (${getRarityName(e.rarity)})">${e.emoji||'🎮'}<div style="font-size:.7em">${e.name}</div></div>`).join(''))}catch(t){console.error('Ошибка загрузки скинов:',t)}}
+async function checkAdmin() {
+    // Здесь должна быть проверка на админа
+    // Временно показываем кнопку админа всем авторизованным
+    const adminBtn = document.getElementById('admin-btn');
+    adminBtn.style.display = 'flex';
+}
 
-// Drag & Drop
-function allowDrop(e){e.preventDefault(),e.currentTarget.classList.add('drag-over')}function dragLeave(e){e.currentTarget.classList.remove('drag-over')}function dragStart(e,t){e.dataTransfer.setData('skinId',t),e.currentTarget.classList.add('dragging')}function dragEnd(e){e.currentTarget.classList.remove('dragging')}
-function dropOnCase(e){e.preventDefault(),e.currentTarget.classList.remove('drag-over');const t=e.dataTransfer.getData('skinId');if(!t||!selectedCaseId)return;const a=parseInt(t),s=parseInt(prompt('Укажите шанс выпадения (1-100):','10'))||10;if(s<1||s>100)return alert('Шанс должен быть от 1 до 100');addSkinToCase(a,s)}
+async function loadUserData() {
+    // Загружаем баланс пользователя
+    const balance = document.getElementById('balance');
+    // Здесь должен быть запрос к базе данных
+    // Временно ставим 1000
+    balance.textContent = '1000';
+}
 
-// Работа с кейсами
-async function loadCaseSkins(e){try{const{data:t}=await supabase.from('case_skins').select(`skin_id,weight,skins(name,emoji)`).eq('case_id',e),a=document.getElementById('case-skins-list');currentCaseSkins=t||[],a&&(a.innerHTML=t.length?t.map(t=>`<div class="case-skin-item"><span>${t.skins?.emoji||'🎮'} ${t.skins?.name||'Скин'}</span><input type="number" value="${t.weight||10}" min="1" max="100" onchange="updateSkinWeight(${t.skin_id},this.value)" style="width:60px;margin:0 5px;"><button onclick="removeSkinFromCase(${t.skin_id})">×</button></div>`).join(''):'<p>Перетащите сюда скины</p>')}catch(s){console.error('Ошибка загрузки скинов:',s)}}
-function addSkinToCase(e,t){if(currentCaseSkins.find(a=>a.skin_id===e))return alert('Этот скин уже в кейсе');currentCaseSkins.push({skin_id:e,weight:t}),updateCaseSkinsDisplay()}function updateSkinWeight(e,t){const a=currentCaseSkins.findIndex(a=>a.skin_id===e);a>-1&&(currentCaseSkins[a].weight=parseInt(t)||10)}function removeSkinFromCase(e){currentCaseSkins=currentCaseSkins.filter(t=>t.skin_id!==e),updateCaseSkinsDisplay()}function updateCaseSkinsDisplay(){const e=document.getElementById('case-skins-list');e&&(e.innerHTML=currentCaseSkins.length?currentCaseSkins.map(e=>`<div class="case-skin-item"><span>Скин #${e.skin_id}</span><input type="number" value="${e.weight||10}" min="1" max="100" onchange="updateSkinWeight(${e.skin_id},this.value)" style="width:60px;margin:0 5px;"><button onclick="removeSkinFromCase(${e.skin_id})">×</button></div>`).join(''):'<p>Перетащите сюда скины</p>')}
+async function loadCases() {
+    const casesContainer = document.getElementById('cases');
+    
+    // Временно создаем тестовые кейсы
+    const testCases = [
+        { id: 1, name: 'Базовый кейс', price: 100, items: 5 },
+        { id: 2, name: 'Премиум кейс', price: 500, items: 10 },
+        { id: 3, name: 'Легендарный кейс', price: 1000, items: 15 },
+        { id: 4, name: 'Новичковый кейс', price: 50, items: 3 }
+    ];
+    
+    casesContainer.innerHTML = '';
+    
+    testCases.forEach(caseItem => {
+        const caseCard = document.createElement('div');
+        caseCard.className = 'case-card';
+        caseCard.innerHTML = `
+            <div class="case-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="case-name">${caseItem.name}</div>
+            <div class="case-price">${caseItem.price} ₽</div>
+            <div class="case-stats">
+                <span>${caseItem.items} предметов</span>
+                <span><i class="fas fa-fire"></i> Популярный</span>
+            </div>
+        `;
+        caseCard.onclick = () => previewCase(caseItem.id);
+        casesContainer.appendChild(caseCard);
+    });
+}
 
-// Сохранение кейса
-async function saveCaseSkins(){if(!selectedCaseId||!currentCaseSkins.length)return alert('Выберите кейс и добавьте скины');try{await supabase.from('case_skins').delete().eq('case_id',selectedCaseId);const e=currentCaseSkins.map(e=>({case_id:selectedCaseId,skin_id:e.skin_id,weight:e.weight||10}));await supabase.from('case_skins').insert(e),alert(`Сохранено! ${e.length} скинов в кейсе`),await loadCaseSkins(selectedCaseId)}catch(e){console.error('Ошибка сохранения:',e),alert('Ошибка: '+e.message)}}
+function showSection(sectionId) {
+    // Скрываем все секции
+    document.querySelectorAll('.main-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Убираем активный класс у всех кнопок
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Показываем выбранную секцию
+    document.getElementById(sectionId).classList.add('active');
+    
+    // Активируем соответствующую кнопку
+    const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => 
+        btn.getAttribute('onclick')?.includes(sectionId)
+    );
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    
+    // Загружаем данные для секции
+    if (sectionId === 'inventory-section') {
+        loadInventory();
+    } else if (sectionId === 'withdrawals-section') {
+        loadWithdrawals();
+    }
+}
 
-// Создание кейса/скина
-async function createNewCase(){const e=document.getElementById('new-case-name').value.trim(),t=parseInt(document.getElementById('new-case-price').value);if(!e||!t||t<=0)return alert('Введите название и цену');try{await supabase.from('cases').insert([{name:e,price:t,emoji:'📦'}]),alert('Кейс создан'),document.getElementById('new-case-name').value='',document.getElementById('new-case-price').value='',await loadAdminCases(),await loadData()}catch(a){alert('Ошибка: '+a.message)}}async function createNewSkin(){const e=document.getElementById('new-skin-name').value.trim(),t=parseInt(document.getElementById('new-skin-price').value);if(!e||!t||t<=0)return alert('Введите название и цену');try{await supabase.from('skins').insert([{name:e,price:t,rarity:'common',emoji:'🎮'}]),alert('Скин создан'),document.getElementById('new-skin-name').value='',document.getElementById('new-skin-price').value='100',await loadAdminSkins()}catch(a){alert('Ошибка: '+a.message)}}
+// Авторизация
+function showAuth() {
+    document.getElementById('auth-modal').style.display = 'flex';
+}
 
-// Утилиты
-function getRarityName(e){return{common:'Обычный',rare:'Редкий',epic:'Эпический',legendary:'Легендарный'}[e]||'Обычный'}function showAuth(){document.getElementById('login-modal').style.display='block'}function showLogin(){document.getElementById('login-modal').style.display='block'}function showRegister(){document.getElementById('register-modal').style.display='block',document.getElementById('login-modal').style.display='none'}function closeModal(e){document.getElementById(e).style.display='none'}
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
 
-// Регистрация/вход
-async function handleRegister(){const e=document.getElementById('register-email').value.trim(),t=document.getElementById('register-password').value.trim();if(!e||!t||t.length<6)return alert('Заполните email и пароль (мин. 6 символов)');try{const{error:a}=await supabase.auth.signUp({email:e,password:t});a?alert('Ошибка: '+a.message):(alert('Регистрация успешна!'),closeModal('register-modal'),showLogin())}catch(s){alert('Ошибка регистрации')}}async function handleLogin(){const e=document.getElementById('login-email').value.trim(),t=document.getElementById('login-password').value.trim();if(!e||!t)return alert('Заполните поля');try{const{error:a}=await supabase.auth.signInWithPassword({email:e,password:t});a?alert('Ошибка: '+a.message):(closeModal('login-modal'),location.reload())}catch(s){alert('Ошибка входа')}}
+async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const error = document.getElementById('auth-error');
+    
+    if (!email || !password) {
+        error.textContent = 'Заполните все поля';
+        return;
+    }
+    
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+    });
+    
+    if (authError) {
+        error.textContent = 'Ошибка входа: ' + authError.message;
+        return;
+    }
+    
+    currentUser = data.user;
+    closeModal('auth-modal');
+    updateUI();
+    loadCases();
+    loadInventory();
+}
 
-// Запуск
-document.addEventListener('DOMContentLoaded',init);
+async function register() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const error = document.getElementById('auth-error');
+    
+    if (!email || !password) {
+        error.textContent = 'Заполните все поля';
+        return;
+    }
+    
+    if (password.length < 6) {
+        error.textContent = 'Пароль должен быть не менее 6 символов';
+        return;
+    }
+    
+    const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password
+    });
+    
+    if (authError) {
+        error.textContent = 'Ошибка регистрации: ' + authError.message;
+        return;
+    }
+    
+    error.textContent = 'Регистрация успешна! Проверьте вашу почту для подтверждения.';
+    setTimeout(() => {
+        closeModal('auth-modal');
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+    }, 2000);
+}
+
+async function logout() {
+    await supabase.auth.signOut();
+    currentUser = null;
+    updateUI();
+    showSection('cases-section');
+}
+
+// Функции для кейсов
+function previewCase(caseId) {
+    selectedCaseId = caseId;
+    // Загружаем информацию о кейсе
+    document.getElementById('preview-title').textContent = 'Базовый кейс';
+    document.getElementById('preview-price').textContent = '100';
+    
+    // Показываем предметы
+    const previewItems = document.getElementById('preview-items');
+    previewItems.innerHTML = '';
+    
+    const testItems = [
+        { name: 'Обычный нож', chance: 40 },
+        { name: 'Редкий пистолет', chance: 25 },
+        { name: 'Эпическая винтовка', chance: 15 },
+        { name: 'Легендарный скин', chance: 10 },
+        { name: 'Ультра редкий предмет', chance: 5 },
+        { name: 'Секретный артефакт', chance: 5 }
+    ];
+    
+    testItems.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'preview-item';
+        itemEl.innerHTML = `
+            <i class="fas fa-gem"></i>
+            <div class="preview-item-name">${item.name}</div>
+            <div class="preview-item-chance">${item.chance}%</div>
+        `;
+        previewItems.appendChild(itemEl);
+    });
+    
+    document.getElementById('preview-modal').style.display = 'flex';
+}
+
+function openCase() {
+    if (!currentUser) {
+        alert('Войдите в систему для открытия кейсов');
+        return;
+    }
+    
+    alert('Кейс открыт! Вы получили: Обычный нож');
+    closeModal('preview-modal');
+}
+
+// Инвентарь
+async function loadInventory() {
+    const inventoryList = document.getElementById('inventory-list');
+    const inventoryTotal = document.getElementById('inventory-total');
+    const inventoryValue = document.getElementById('inventory-value');
+    
+    if (!currentUser) {
+        inventoryList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <p>Войдите в систему для просмотра инвентаря</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Тестовые предметы
+    const testItems = [
+        { name: 'Обычный нож', price: 50 },
+        { name: 'Редкий пистолет', price: 200 },
+        { name: 'Эпическая винтовка', price: 500 },
+        { name: 'Легендарный скин', price: 1000 }
+    ];
+    
+    inventoryList.innerHTML = '';
+    let totalValue = 0;
+    
+    testItems.forEach(item => {
+        const skinCard = document.createElement('div');
+        skinCard.className = 'skin-card';
+        skinCard.innerHTML = `
+            <div class="skin-icon">
+                <i class="fas fa-gem"></i>
+            </div>
+            <div class="skin-info">
+                <div class="skin-name">${item.name}</div>
+                <div class="skin-price">${item.price} ₽</div>
+            </div>
+        `;
+        inventoryList.appendChild(skinCard);
+        totalValue += item.price;
+    });
+    
+    inventoryTotal.textContent = testItems.length;
+    inventoryValue.textContent = totalValue;
+    document.getElementById('inventory-count').textContent = testItems.length;
+}
+
+// Вывод средств
+function showWithdraw() {
+    if (!currentUser) {
+        alert('Войдите в систему для вывода средств');
+        return;
+    }
+    
+    document.getElementById('withdraw-balance').textContent = document.getElementById('balance').textContent;
+    document.getElementById('withdraw-modal').style.display = 'flex';
+}
+
+async function createWithdraw() {
+    const amount = document.getElementById('withdraw-amount').value;
+    const tg = document.getElementById('withdraw-tg').value;
+    
+    if (!amount || !tg) {
+        alert('Заполните все поля');
+        return;
+    }
+    
+    if (parseInt(amount) < 1000) {
+        alert('Минимальная сумма вывода: 1000 ₽');
+        return;
+    }
+    
+    alert(`Заявка на вывод ${amount} ₽ создана! Мы свяжемся с вами в Telegram: ${tg}`);
+    closeModal('withdraw-modal');
+    loadWithdrawals();
+}
+
+async function loadWithdrawals() {
+    const withdrawalsHistory = document.getElementById('withdrawals-history');
+    
+    if (!currentUser) {
+        withdrawalsHistory.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <p>Войдите в систему для просмотра заявок</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Тестовые заявки
+    const testWithdrawals = [
+        { id: 1, amount: 1500, status: 'completed', date: '2024-01-15', tg: '@user1' },
+        { id: 2, amount: 2000, status: 'pending', date: '2024-01-16', tg: '@user1' },
+        { id: 3, amount: 1000, status: 'completed', date: '2024-01-10', tg: '@user1' }
+    ];
+    
+    withdrawalsHistory.innerHTML = '';
+    
+    testWithdrawals.forEach(withdrawal => {
+        const item = document.createElement('div');
+        item.className = `withdrawal-item withdrawal-${withdrawal.status}`;
+        item.innerHTML = `
+            <div class="withdrawal-info">
+                <h4>Заявка #${withdrawal.id}</h4>
+                <p>${withdrawal.date} • ${withdrawal.tg}</p>
+                <p>Статус: ${withdrawal.status === 'completed' ? 'Выполнена' : 'В обработке'}</p>
+            </div>
+            <div class="withdrawal-amount">${withdrawal.amount} ₽</div>
+        `;
+        withdrawalsHistory.appendChild(item);
+    });
+    
+    // Обновляем статистику
+    const pending = testWithdrawals.filter(w => w.status === 'pending').length;
+    const completed = testWithdrawals.filter(w => w.status === 'completed').length;
+    const total = testWithdrawals.filter(w => w.status === 'completed')
+        .reduce((sum, w) => sum + w.amount, 0);
+    
+    document.getElementById('pending-withdrawals').textContent = pending;
+    document.getElementById('completed-withdrawals').textContent = completed;
+    document.getElementById('total-withdrawn').textContent = total;
+}
+
+// Админ-панель
+function adminPanel() {
+    if (!currentUser) return;
+    
+    document.getElementById('admin-modal').style.display = 'flex';
+    loadAdminCases();
+    loadAdminSkins();
+}
+
+function loadAdminCases() {
+    const casesList = document.getElementById('admin-cases-list');
+    // Здесь должна быть загрузка кейсов из БД
+    casesList.innerHTML = '<div class="admin-item">Базовый кейс (100 ₽)</div>';
+}
+
+function loadAdminSkins() {
+    const skinsList = document.getElementById('admin-skins-list');
+    // Здесь должна быть загрузка скинов из БД
+    skinsList.innerHTML = `
+        <div class="admin-item" draggable="true" onclick="selectSkin(1)" ondragstart="dragSkin(event, 1)">
+            <div class="admin-item-header">
+                <span class="admin-item-name">Обычный нож</span>
+                <span class="admin-item-price">50 ₽</span>
+            </div>
+        </div>
+        <div class="admin-item" draggable="true" onclick="selectSkin(2)" ondragstart="dragSkin(event, 2)">
+            <div class="admin-item-header">
+                <span class="admin-item-name">Редкий пистолет</span>
+                <span class="admin-item-price">200 ₽</span>
+            </div>
+        </div>
+    `;
+}
+
+function createNewCase() {
+    const name = document.getElementById('new-case-name').value;
+    const price = document.getElementById('new-case-price').value;
+    
+    if (!name || !price) {
+        alert('Заполните все поля');
+        return;
+    }
+    
+    alert(`Кейс "${name}" создан!`);
+    document.getElementById('new-case-name').value = '';
+    document.getElementById('new-case-price').value = '';
+    loadAdminCases();
+}
+
+function createNewSkin() {
+    const name = document.getElementById('new-skin-name').value;
+    const price = document.getElementById('new-skin-price').value;
+    
+    if (!name || !price) {
+        alert('Заполните все поля');
+        return;
+    }
+    
+    alert(`Скин "${name}" создан!`);
+    document.getElementById('new-skin-name').value = '';
+    document.getElementById('new-skin-price').value = '100';
+    loadAdminSkins();
+}
+
+// Drag and Drop для админ-панели
+function dragSkin(event, skinId) {
+    draggedSkinId = skinId;
+    event.dataTransfer.setData('text/plain', skinId);
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+}
+
+function dropOnCase(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    
+    const skinId = event.dataTransfer.getData('text/plain');
+    if (!skinId) return;
+    
+    const chance = prompt('Укажите шанс выпадения (1-100):', '50');
+    if (!chance || isNaN(chance) || chance < 1 || chance > 100) {
+        alert('Введите корректный шанс (1-100)');
+        return;
+    }
+    
+    // Добавляем скин в список кейса
+    const skinsList = document.getElementById('case-skins-list');
+    const skinItem = document.createElement('div');
+    skinItem.className = 'case-skin-item';
+    skinItem.innerHTML = `
+        <span>Скин #${skinId} (шанс: ${chance}%)</span>
+        <input type="number" class="chance-input" value="${chance}" min="1" max="100">
+    `;
+    skinsList.appendChild(skinItem);
+}
+
+function saveCaseSkins() {
+    alert('Состав кейса сохранен!');
+}
+
+function clearCaseSkins() {
+    document.getElementById('case-skins-list').innerHTML = `
+        <i class="fas fa-arrow-left"></i>
+        <p>Перетащите сюда скины из левой колонки</p>
+        <small>Укажите шанс выпадения (1-100) при перетаскивании</small>
+    `;
+}
+
+function selectSkin(skinId) {
+    // Логика выбора скина
+    console.log('Выбран скин:', skinId);
+}
+
+// Обработка кликов вне модальных окон
+window.onclick = function(event) {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+};

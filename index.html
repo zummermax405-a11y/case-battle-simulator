@@ -16,17 +16,6 @@
                     <i class="fas fa-gamepad"></i>
                     <h1>Case Simulator</h1>
                 </div>
-                <nav class="main-nav">
-                    <button class="nav-btn active" onclick="showSection('cases-section')">
-                        <i class="fas fa-box-open"></i> Кейсы
-                    </button>
-                    <button class="nav-btn" onclick="showSection('inventory-section')">
-                        <i class="fas fa-backpack"></i> Инвентарь
-                    </button>
-                    <button class="nav-btn" onclick="showSection('withdrawals-section')">
-                        <i class="fas fa-money-bill-wave"></i> Заявки на вывод
-                    </button>
-                </nav>
             </div>
             
             <div class="user-panel">
@@ -56,13 +45,28 @@
             </div>
         </header>
 
+        <!-- Навигация -->
+        <nav class="main-nav">
+            <button class="nav-btn active" onclick="showSection('cases-section')">
+                <i class="fas fa-box-open"></i> Кейсы
+            </button>
+            <button class="nav-btn" onclick="showSection('inventory-section')">
+                <i class="fas fa-backpack"></i> Инвентарь
+            </button>
+            <button class="nav-btn" onclick="showSection('withdrawals-section')">
+                <i class="fas fa-money-bill-wave"></i> Заявки на вывод
+            </button>
+        </nav>
+
         <!-- Секция с кейсами (по умолчанию активна) -->
         <section id="cases-section" class="main-section active">
             <div class="section-header">
                 <h2><i class="fas fa-box-open"></i> Доступные кейсы</h2>
                 <p>Открывайте кейсы и получайте редкие скины!</p>
             </div>
-            <div id="cases" class="cases-grid"></div>
+            <div id="cases" class="cases-grid">
+                <div class="loading">Загрузка кейсов...</div>
+            </div>
         </section>
 
         <!-- Секция инвентаря -->
@@ -74,11 +78,13 @@
                     <span>Общая стоимость: <span id="inventory-value">0</span> ₽</span>
                 </div>
             </div>
-            <div id="inventory-list" class="inventory-grid"></div>
+            <div id="inventory-list" class="inventory-grid">
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <p>Инвентарь пуст</p>
+                </div>
+            </div>
             <div class="inventory-actions">
-                <button class="btn-secondary" onclick="sellAllDuplicates()">
-                    <i class="fas fa-recycle"></i> Продать дубликаты
-                </button>
                 <button class="btn-primary" onclick="showWithdraw()">
                     <i class="fas fa-money-bill-wave"></i> Вывести средства
                 </button>

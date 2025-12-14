@@ -9,7 +9,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
     color: #fff;
     min-height: 100vh;
     padding: 20px;
@@ -29,7 +29,7 @@ body {
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 20px 30px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
@@ -37,7 +37,7 @@ body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 40px;
+    gap: 20px;
 }
 
 .logo {
@@ -55,13 +55,19 @@ body {
     font-size: 1.8rem;
     background: linear-gradient(45deg, #6c5ce7, #a29bfe);
     -webkit-background-clip: text;
-    background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
+/* Навигация */
 .main-nav {
     display: flex;
     gap: 10px;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-btn {
@@ -90,6 +96,7 @@ body {
     box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
 }
 
+/* Панель пользователя */
 .user-panel {
     display: flex;
     align-items: center;
@@ -99,7 +106,7 @@ body {
 .user-info {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
 }
 
 .user-balance, .user-inventory {
@@ -145,11 +152,11 @@ body {
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
+    color: white;
 }
 
 .btn-primary {
     background: linear-gradient(45deg, #6c5ce7, #a29bfe);
-    color: white;
 }
 
 .btn-primary:hover {
@@ -159,7 +166,6 @@ body {
 
 .btn-secondary {
     background: rgba(255, 255, 255, 0.1);
-    color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -170,7 +176,6 @@ body {
 
 .btn-admin {
     background: linear-gradient(45deg, #00b894, #00cec9);
-    color: white;
 }
 
 .btn-admin:hover {
@@ -180,7 +185,6 @@ body {
 
 .btn-success {
     background: linear-gradient(45deg, #00b894, #00cec9);
-    color: white;
 }
 
 .btn-success:hover {
@@ -218,6 +222,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .section-header h2 {
@@ -786,6 +794,13 @@ body {
     font-size: 2rem;
 }
 
+.loading {
+    text-align: center;
+    padding: 50px;
+    color: #b2bec3;
+    font-size: 1.2rem;
+}
+
 /* Превью предметов */
 .preview-items-grid {
     display: grid;
@@ -875,18 +890,22 @@ body {
     
     .header-left {
         flex-direction: column;
-        gap: 20px;
+        text-align: center;
     }
     
     .cases-grid {
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+    
+    .user-panel {
+        flex-direction: column;
+        gap: 15px;
     }
 }
 
 @media (max-width: 768px) {
     .modal-content {
         margin: 10px;
-        padding: 0;
     }
     
     .admin-container {
@@ -905,6 +924,16 @@ body {
     .withdrawals-stats {
         grid-template-columns: 1fr;
     }
+    
+    .main-nav {
+        flex-wrap: wrap;
+    }
+    
+    .nav-btn {
+        flex: 1;
+        min-width: 150px;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 576px) {
@@ -916,14 +945,13 @@ body {
         grid-template-columns: 1fr;
     }
     
-    .main-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
     .section-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
+    }
+    
+    .logo h1 {
+        font-size: 1.4rem;
     }
 }
