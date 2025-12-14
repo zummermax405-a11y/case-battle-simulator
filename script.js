@@ -123,17 +123,29 @@ async function createWithdraw() {
         return;
     }
     
-    await fetch(WORKER_URL + '/api/create-withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    // 1. Создаем заявку в базе
+    const { data: request, error } = await supabase
+        .from('withdrawal_requests')
+        .insert([{
             player_id: game.user.id,
             amount: amount,
-            telegram: telegram
-        })
-    });
+            telegram_contact: telegram,
+            status: 'pending'
+        }])
+        .select()
+        .single();
     
-    alert('Заявка создана! Админ: @zummer_pro');
+    if (error) {
+        alert('Ошибка создания заявки: ' + error.message);
+        return;
+    }
+    
+    // 2. НЕ списываем баланс на фронтенде - это сделает админ вручную
+    alert(`Заявка #${request.id} создана!\nСумма: ${amount} монет\nАдмин свяжется: ${telegram}`);
+    
+    // 3. Можно показать уведомление, что баланс НЕ списан
+    alert('⚠️ ВАЖНО: Баланс НЕ списан автоматически. Админ спишет вручную после проверки.');
+    
     document.getElementById('withdraw-modal').style.display = 'none';
 }
 
@@ -144,12 +156,51 @@ function showAdmin() {
     loadWithdrawRequests();
 }
 
+// В script.js добавьте
 async function loadWithdrawRequests() {
-    const { data } = await supabase.from('withdrawal_requests').select('*');
+    const { data } = await supabase.from('withdrawal_requests').select('*').order('id', { ascending: false });
     const container = document.getElementById('withdraw-requests');
+    
     container.innerHTML = (data || []).map(r => `
-        <div>${r.id}: ${r.amount} @${r.telegram} - ${r.status}</div>
+        <div class="request-item">
+            <strong>#${r.id}</strong> - ${r.amount} монет
+            <br>Telegram: ${r.telegram_contact}
+            <br>Статус: <span class="status-${r.status}">${r.status}</span>
+            ${r.status === 'pending' ? `
+                <button onclick="approveRequest(${r.id})">✅ Одобрить</button>
+                <button onclick="rejectRequest(${r.id})">❌ Отклонить</button>
+            ` : ''}
+            <hr>
+        </div>
     `).join('');
+}
+
+// Эти функции может вызывать ТОЛЬКО админ вручную
+async function approveRequest(requestId) {
+    if (!confirm('Одобрить эту заявку?')) return;
+    
+    // Вызываем защищенный endpoint Worker
+    const response = await fetch(WORKER_URL + '/api/admin/approve-withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId })
+    });
+    
+    const result = await response.json();
+    alert(result.success ? 'Заявка одобрена!' : 'Ошибка: ' + result.error);
+    loadWithdrawRequests();
+}
+
+async function rejectRequest(requestId) {
+    if (!confirm('Отклонить заявку?')) return;
+    
+    await supabase
+        .from('withdrawal_requests')
+        .update({ status: 'rejected' })
+        .eq('id', requestId);
+    
+    alert('Заявка отклонена');
+    loadWithdrawRequests();
 }
 
 async function createCase() {

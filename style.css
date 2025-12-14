@@ -14,3 +14,14 @@ button:hover{opacity:0.9}
 .modal-content{background:#1a1a2e;margin:5% auto;padding:30px;border-radius:15px;width:90%;max-width:500px}
 input{width:100%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #4cc9f0;background:rgba(255,255,255,0.1);color:white}
 .preview-item{display:inline-block;margin:5px;padding:10px;background:rgba(255,255,255,0.05);border-radius:5px}
+
+/* Добавьте в style.css */
+.request-item {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+}
+.status-pending { color: #ffc107; }
+.status-approved { color: #00b894; }
+.status-rejected { color: #f72585; }
