@@ -50,64 +50,85 @@ async function checkAuth() {
             state.user = data.session.user;
             console.log('Пользователь авторизован:', state.user.email);
             
-            // Обновляем UI
-            const authBtn = document.getElementById('auth-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-            const userEmail = document.getElementById('user-email');
+            // 1. Сначала показываем кнопки
+            document.getElementById('auth-btn').style.display = 'none';
+            document.getElementById('logout-btn').style.display = 'block';
+            document.getElementById('user-email').textContent = state.user.email;
             
-            if (authBtn) authBtn.style.display = 'none';
-            if (logoutBtn) logoutBtn.style.display = 'block';
-            if (userEmail) userEmail.textContent = state.user.email;
+            // 2. Обновляем таблицу users (ВАЖНО: без await - чтобы не блокировать)
+            updateUserInDatabase(state.user);
             
-            // Создаем/обновляем пользователя в таблице users
-            try {
-                await supabase.from('users').upsert({
-                    id: state.user.id, 
-                    email: state.user.email, 
-                    balance: 10000, 
-                    role: 'user',
-                    created_at: new Date().toISOString()
-                }, { 
-                    onConflict: 'id',
-                    ignoreDuplicates: false 
-                });
-            } catch (upsertError) {
-                console.warn('Ошибка синхронизации пользователя:', upsertError);
-            }
-            
-            // Проверяем роль админа
-            try {
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('role')
-                    .eq('id', state.user.id)
-                    .single();
-                    
-                if (!userError && userData?.role === 'admin') {
-                    const adminBtn = document.getElementById('admin-btn');
-                    if (adminBtn) adminBtn.style.display = 'block';
-                }
-            } catch (adminError) {
-                console.warn('Ошибка проверки админа:', adminError);
-            }
+            // 3. Проверяем админа
+            checkAdminRole(state.user.id);
         } else {
             console.log('Пользователь не авторизован');
-            // Обновляем UI для гостя
-            const authBtn = document.getElementById('auth-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-            const adminBtn = document.getElementById('admin-btn');
-            const userEmail = document.getElementById('user-email');
-            
-            if (authBtn) authBtn.style.display = 'block';
-            if (logoutBtn) logoutBtn.style.display = 'none';
-            if (adminBtn) adminBtn.style.display = 'none';
-            if (userEmail) userEmail.textContent = 'Гость';
+            document.getElementById('auth-btn').style.display = 'block';
+            document.getElementById('logout-btn').style.display = 'none';
+            document.getElementById('admin-btn').style.display = 'none';
+            document.getElementById('user-email').textContent = 'Гость';
         }
     } catch (error) {
         console.error('Ошибка проверки авторизации:', error);
-        // Показываем кнопку входа в случае ошибки
-        const authBtn = document.getElementById('auth-btn');
-        if (authBtn) authBtn.style.display = 'block';
+        document.getElementById('auth-btn').style.display = 'block';
+    }
+}
+
+// Новая функция для обновления пользователя в базе
+async function updateUserInDatabase(user) {
+    try {
+        // Проверяем, существует ли пользователь
+        const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle(); // Возвращает null если нет записи
+            
+        if (checkError) {
+            console.warn('Ошибка проверки пользователя:', checkError);
+        }
+        
+        // Если пользователя нет - создаем
+        if (!existingUser) {
+            console.log('Создаем нового пользователя в таблице users...');
+            const { error: insertError } = await supabase
+                .from('users')
+                .insert([{
+                    id: user.id,
+                    email: user.email,
+                    balance: 10000,
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                }]);
+                
+            if (insertError) {
+                console.error('Ошибка создания пользователя:', insertError);
+            } else {
+                console.log('Пользователь успешно создан в таблице users');
+            }
+        } else {
+            console.log('Пользователь уже существует в таблице users');
+        }
+    } catch (error) {
+        console.error('Ошибка обновления пользователя в БД:', error);
+    }
+}
+
+// Функция проверки роли админа
+async function checkAdminRole(userId) {
+    try {
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', userId)
+            .single();
+            
+        if (!userError && userData?.role === 'admin') {
+            document.getElementById('admin-btn').style.display = 'block';
+        } else {
+            document.getElementById('admin-btn').style.display = 'none';
+        }
+    } catch (error) {
+        console.warn('Ошибка проверки админа:', error);
     }
 }
 
