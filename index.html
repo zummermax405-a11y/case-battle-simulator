@@ -1,84 +1,56 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS:GO Case Simulator</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Sim</title><link rel="stylesheet" href="style.css"></head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎮 CS:GO Case Simulator</h1>
-            <div class="user-info">
-                <span id="user-email">Гость</span>
-                <span id="user-balance">Баланс: 0</span>
-                <button id="auth-btn" onclick="authToggle()">🔑 Войти</button>
-                <button id="admin-btn" onclick="showAdmin()" style="display:none">⚙️ Админ</button>
-            </div>
-        </header>
+<div class="container">
+<header>
+<h1>🎮 Case Sim</h1>
+<div class="user-panel">
+<span id="user-email">Гость</span>
+<button id="auth-btn" onclick="showAuth()">🔑 Войти</button>
+<button id="logout-btn" onclick="logout()" style="display:none">🚪 Выйти</button>
+<button id="admin-btn" onclick="adminPanel()" style="display:none">⚙️</button>
+</div>
+</header>
 
-        <div class="stats">
-            <div>💰 <span id="balance">0</span></div>
-            <div>🎒 <span id="inventory-count">0</span></div>
-            <div>📦 <span id="cases-opened">0</span></div>
-        </div>
+<div class="stats">
+<div>💰 <span id="balance">0</span></div>
+<div>🎒 <span id="inventory">0</span></div>
+<button onclick="showWithdraw()" class="withdraw-btn">💸 Вывести</button>
+</div>
 
-        <button class="withdraw-btn" onclick="showWithdraw()">💸 Вывести</button>
+<div id="cases" class="grid"></div>
+<div id="inventory-list" class="grid"></div>
 
-        <h2>📦 Кейсы</h2>
-        <div id="cases-container" class="cases"></div>
+<!-- Модалки -->
+<div id="auth-modal" class="modal"><div class="modal-content">
+<h3>Вход/Регистрация</h3>
+<input id="email" placeholder="Email"><input id="password" type="password" placeholder="Пароль">
+<button onclick="login()">Войти</button><button onclick="register()">Регистрация</button>
+<p id="auth-error"></p></div></div>
 
-        <h2>🎒 Инвентарь</h2>
-        <div id="inventory-container" class="inventory"></div>
+<div id="preview-modal" class="modal"><div class="modal-content">
+<h3 id="preview-title"></h3><p id="preview-price"></p>
+<div id="preview-items"></div>
+<button onclick="openCase()" id="open-btn">Открыть</button></div></div>
 
-        <!-- Модалки -->
-        <div id="auth-modal" class="modal">
-            <div class="modal-content">
-                <h3>Авторизация</h3>
-                <input id="auth-email" type="email" placeholder="Email">
-                <input id="auth-password" type="password" placeholder="Пароль">
-                <button onclick="login()">Войти</button>
-                <button onclick="register()">Регистрация</button>
-                <p id="auth-error"></p>
-            </div>
-        </div>
+<div id="withdraw-modal" class="modal"><div class="modal-content">
+<h3>Вывод средств</h3><p>Баланс: <span id="withdraw-balance">0</span></p>
+<input id="withdraw-amount" type="number" min="1000" placeholder="Сумма (мин 1000)">
+<input id="withdraw-tg" placeholder="@telegram">
+<button onclick="createWithdraw()">Создать заявку</button></div></div>
 
-        <div id="preview-modal" class="modal">
-            <div class="modal-content">
-                <h3 id="preview-title"></h3>
-                <p>Цена: <span id="preview-price">0</span></p>
-                <div id="preview-items"></div>
-                <button onclick="openCase()" id="open-case-btn">Открыть</button>
-            </div>
-        </div>
+<div id="admin-modal" class="modal"><div class="modal-content">
+<h3>Админ</h3><div id="admin-content">
+<h4>Заявки на вывод</h4><div id="withdraw-list"></div>
+<h4>Новый кейс</h4>
+<input id="case-name" placeholder="Название">
+<input id="case-price" placeholder="Цена">
+<button onclick="createNewCase()">Создать</button></div></div></div>
+</div>
 
-        <div id="withdraw-modal" class="modal">
-            <div class="modal-content">
-                <h3>Вывод</h3>
-                <p>Баланс: <span id="withdraw-balance">0</span></p>
-                <input type="number" id="withdraw-amount" min="1000">
-                <input type="text" id="withdraw-telegram" placeholder="@telegram">
-                <button onclick="createWithdraw()">Создать заявку</button>
-            </div>
-        </div>
-
-        <div id="admin-modal" class="modal">
-            <div class="modal-content">
-                <h3>Админ-панель</h3>
-                <div id="admin-content">
-                    <h4>Заявки</h4>
-                    <div id="withdraw-requests"></div>
-                    <h4>Создать кейс</h4>
-                    <input id="admin-case-name" placeholder="Название">
-                    <input id="admin-case-price" placeholder="Цена">
-                    <button onclick="createCase()">Создать</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
 </body>
 </html>

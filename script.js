@@ -1,50 +1,76 @@
-// Конфигурация
-const WORKER_URL = 'https://mute-night-5909.zummer-max405.workers.dev';
-const SUPABASE_URL = 'https://jttsgizkuyipolcnvanc.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Конфиг
+const WORKER = 'https://mute-night-5909.zummer-max405.workers.dev';
+const SB_URL = 'https://jttsgizkuyipolcnvanc.supabase.co';
+const SB_KEY = 'sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
+const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
 // Состояние
-let game = { balance: 0, inventory: [], casesOpened: 0, user: null };
+let state = { user: null, balance: 0, inventory: [], casesOpened: 0 };
 let cases = [], skins = [], selectedCase = null;
 
 // Инициализация
 async function init() {
     checkAuth();
     loadData();
-    if (game.user) updateGame();
+    if (state.user) loadPlayer();
 }
 
 // Авторизация
 async function checkAuth() {
     const { data } = await supabase.auth.getSession();
     if (data.session) {
-        game.user = data.session.user;
+        state.user = data.session.user;
         document.getElementById('auth-btn').style.display = 'none';
-        document.getElementById('user-email').textContent = game.user.email;
+        document.getElementById('logout-btn').style.display = 'block';
+        document.getElementById('user-email').textContent = state.user.email;
+        
+        // Синхронизируем с users таблицей
+        const { error } = await supabase.from('users').upsert([{
+            id: state.user.id,
+            email: state.user.email,
+            balance: 10000,
+            role: 'user'
+        }], { onConflict: 'id' });
+        
+        // Проверяем админа
+        const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', state.user.id)
+            .single();
+        
+        if (userData?.role === 'admin') {
+            document.getElementById('admin-btn').style.display = 'block';
+        }
     }
+    updateUI();
 }
 
-function authToggle() {
+function showAuth() {
     document.getElementById('auth-modal').style.display = 'block';
 }
 
 async function login() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) alert('Ошибка: ' + error.message);
     else location.reload();
 }
 
 async function register() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
     const { error } = await supabase.auth.signUp({ email, password });
     alert(error ? 'Ошибка' : 'Проверьте email');
 }
 
-// Данные
+async function logout() {
+    await supabase.auth.signOut();
+    location.reload();
+}
+
+// Загрузка данных
 async function loadData() {
     const [{ data: c }, { data: s }] = await Promise.all([
         supabase.from('cases').select('*'),
@@ -54,42 +80,70 @@ async function loadData() {
     renderCases();
 }
 
+async function loadPlayer() {
+    if (!state.user) return;
+    const { data } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', state.user.id)
+        .single();
+    if (data) state.balance = data.balance;
+    
+    const { data: inv } = await supabase
+        .from('player_inventory')
+        .select('skin_id')
+        .eq('player_id', state.user.id);
+    state.inventory = inv || [];
+    
+    updateUI();
+    renderInventory();
+}
+
 // UI
 function updateUI() {
-    document.getElementById('balance').textContent = game.balance;
-    document.getElementById('inventory-count').textContent = game.inventory.length;
-    document.getElementById('cases-opened').textContent = game.casesOpened;
+    document.getElementById('balance').textContent = state.balance;
+    document.getElementById('inventory').textContent = state.inventory.length;
 }
 
 function renderCases() {
-    const container = document.getElementById('cases-container');
-    container.innerHTML = cases.map(c => `
-        <div class="case-item" onclick="previewCase(${c.id})">
-            <h3>${c.emoji} ${c.name}</h3>
+    document.getElementById('cases').innerHTML = cases.map(c => `
+        <div class="case" onclick="previewCase(${c.id})">
+            <h3>${c.emoji || '📦'} ${c.name}</h3>
             <p>${c.price} монет</p>
         </div>
+    `).join('');
+}
+
+function renderInventory() {
+    document.getElementById('inventory-list').innerHTML = state.inventory.map(i => `
+        <div class="skin">Скин #${i.skin_id}</div>
     `).join('');
 }
 
 // Кейсы
 function previewCase(id) {
     selectedCase = cases.find(c => c.id === id);
+    if (!state.user) {
+        alert('Войдите для открытия кейсов');
+        showAuth();
+        return;
+    }
     document.getElementById('preview-title').textContent = selectedCase.name;
-    document.getElementById('preview-price').textContent = selectedCase.price;
+    document.getElementById('preview-price').textContent = `Цена: ${selectedCase.price} монет`;
     document.getElementById('preview-modal').style.display = 'block';
 }
 
 async function openCase() {
-    if (!game.user || game.balance < selectedCase.price) {
-        alert('Недостаточно средств или не авторизован');
+    if (state.balance < selectedCase.price) {
+        alert('Недостаточно средств');
         return;
     }
     
-    const response = await fetch(WORKER_URL + '/api/open-case', {
+    const response = await fetch(WORKER + '/api/open-case', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            player_id: game.user.id,
+            player_id: state.user.id,
             case_id: selectedCase.id,
             case_price: selectedCase.price
         })
@@ -97,120 +151,98 @@ async function openCase() {
     
     const result = await response.json();
     if (result.success) {
-        game.balance = result.newBalance;
-        game.casesOpened++;
+        state.balance = result.newBalance;
+        state.casesOpened++;
         updateUI();
-        alert('Выиграно: ' + result.wonSkin);
+        alert('Выиграли: ' + (result.skin || 'скин'));
+        loadPlayer();
     }
 }
 
 // Вывод
 function showWithdraw() {
-    if (game.balance < 1000) {
+    if (!state.user) {
+        alert('Войдите для вывода');
+        showAuth();
+        return;
+    }
+    if (state.balance < 1000) {
         alert('Минимум 1000 монет');
         return;
     }
-    document.getElementById('withdraw-balance').textContent = game.balance;
+    document.getElementById('withdraw-balance').textContent = state.balance;
     document.getElementById('withdraw-modal').style.display = 'block';
 }
 
 async function createWithdraw() {
     const amount = parseInt(document.getElementById('withdraw-amount').value);
-    const telegram = document.getElementById('withdraw-telegram').value;
+    const telegram = document.getElementById('withdraw-tg').value;
     
-    if (amount < 1000 || amount > game.balance || !telegram) {
+    if (amount < 1000 || amount > state.balance || !telegram) {
         alert('Некорректные данные');
         return;
     }
     
-    // 1. Создаем заявку в базе
-    const { data: request, error } = await supabase
-        .from('withdrawal_requests')
-        .insert([{
-            player_id: game.user.id,
-            amount: amount,
-            telegram_contact: telegram,
-            status: 'pending'
-        }])
-        .select()
-        .single();
+    await supabase.from('withdrawal_requests').insert([{
+        player_id: state.user.id,
+        amount: amount,
+        telegram_contact: telegram,
+        status: 'pending'
+    }]);
     
-    if (error) {
-        alert('Ошибка создания заявки: ' + error.message);
-        return;
-    }
-    
-    // 2. НЕ списываем баланс на фронтенде - это сделает админ вручную
-    alert(`Заявка #${request.id} создана!\nСумма: ${amount} монет\nАдмин свяжется: ${telegram}`);
-    
-    // 3. Можно показать уведомление, что баланс НЕ списан
-    alert('⚠️ ВАЖНО: Баланс НЕ списан автоматически. Админ спишет вручную после проверки.');
-    
+    alert('Заявка создана! Админ: @zummer_pro');
     document.getElementById('withdraw-modal').style.display = 'none';
 }
 
 // Админ
-function showAdmin() {
-    if (!game.user) return;
+async function adminPanel() {
     document.getElementById('admin-modal').style.display = 'block';
-    loadWithdrawRequests();
-}
-
-// В script.js добавьте
-async function loadWithdrawRequests() {
-    const { data } = await supabase.from('withdrawal_requests').select('*').order('id', { ascending: false });
-    const container = document.getElementById('withdraw-requests');
     
-    container.innerHTML = (data || []).map(r => `
+    // Загружаем заявки
+    const { data } = await supabase
+        .from('withdrawal_requests')
+        .select('*')
+        .order('id', { ascending: false });
+    
+    document.getElementById('withdraw-list').innerHTML = (data || []).map(r => `
         <div class="request-item">
-            <strong>#${r.id}</strong> - ${r.amount} монет
-            <br>Telegram: ${r.telegram_contact}
-            <br>Статус: <span class="status-${r.status}">${r.status}</span>
+            #${r.id} - ${r.amount} монет<br>
+            ${r.telegram_contact}<br>
+            Статус: <span class="status-${r.status}">${r.status}</span>
             ${r.status === 'pending' ? `
-                <button onclick="approveRequest(${r.id})">✅ Одобрить</button>
-                <button onclick="rejectRequest(${r.id})">❌ Отклонить</button>
+                <button onclick="approveRequest(${r.id})">✅</button>
+                <button onclick="rejectRequest(${r.id})">❌</button>
             ` : ''}
-            <hr>
         </div>
     `).join('');
 }
 
-// Эти функции может вызывать ТОЛЬКО админ вручную
-async function approveRequest(requestId) {
-    if (!confirm('Одобрить эту заявку?')) return;
-    
-    // Вызываем защищенный endpoint Worker
-    const response = await fetch(WORKER_URL + '/api/admin/approve-withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id: requestId })
-    });
-    
-    const result = await response.json();
-    alert(result.success ? 'Заявка одобрена!' : 'Ошибка: ' + result.error);
-    loadWithdrawRequests();
+async function approveRequest(id) {
+    if (!confirm('Одобрить?')) return;
+    await supabase
+        .from('withdrawal_requests')
+        .update({ status: 'approved' })
+        .eq('id', id);
+    adminPanel();
 }
 
-async function rejectRequest(requestId) {
-    if (!confirm('Отклонить заявку?')) return;
-    
+async function rejectRequest(id) {
+    if (!confirm('Отклонить?')) return;
     await supabase
         .from('withdrawal_requests')
         .update({ status: 'rejected' })
-        .eq('id', requestId);
-    
-    alert('Заявка отклонена');
-    loadWithdrawRequests();
+        .eq('id', id);
+    adminPanel();
 }
 
-async function createCase() {
-    const name = document.getElementById('admin-case-name').value;
-    const price = document.getElementById('admin-case-price').value;
+async function createNewCase() {
+    const name = document.getElementById('case-name').value;
+    const price = document.getElementById('case-price').value;
     
     await supabase.from('cases').insert([{ name, price, emoji: '📦' }]);
     alert('Кейс создан');
     loadData();
 }
 
-// Инициализация при загрузке
+// Запуск
 document.addEventListener('DOMContentLoaded', init);
