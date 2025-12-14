@@ -9,337 +9,91 @@
 </head>
 <body>
     <div class="container">
-        <!-- Хедер -->
         <header class="main-header">
             <div class="header-left">
-                <div class="logo">
-                    <i class="fas fa-gamepad"></i>
-                    <h1>Case Simulator</h1>
-                </div>
+                <div class="logo"><i class="fas fa-gamepad"></i><h1>Case Simulator</h1></div>
             </div>
-            
             <div class="user-panel">
                 <div class="user-info">
-                    <div class="user-balance">
-                        <i class="fas fa-coins"></i>
-                        <span id="balance">0</span> ₽
-                    </div>
-                    <div class="user-inventory">
-                        <i class="fas fa-tshirt"></i>
-                        <span id="inventory-count">0</span>
-                    </div>
+                    <div class="user-balance"><i class="fas fa-coins"></i><span id="balance">0</span> ₽</div>
+                    <div class="user-inventory"><i class="fas fa-tshirt"></i><span id="inventory-count">0</span></div>
                     <div class="user-email" id="user-email">Гость</div>
                 </div>
-                
                 <div class="auth-buttons">
-                    <button id="auth-btn" class="btn-primary" onclick="showAuth()">
-                        <i class="fas fa-sign-in-alt"></i> Войти
-                    </button>
-                    <button id="logout-btn" class="btn-secondary" onclick="logout()" style="display:none">
-                        <i class="fas fa-sign-out-alt"></i> Выйти
-                    </button>
-                    <button id="admin-btn" class="btn-admin" onclick="adminPanel()" style="display:none">
-                        <i class="fas fa-cog"></i> Админ
-                    </button>
+                    <button id="auth-btn" class="btn-primary" onclick="showAuth()"><i class="fas fa-sign-in-alt"></i> Войти</button>
+                    <button id="logout-btn" class="btn-secondary" onclick="logout()" style="display:none"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+                    <button id="admin-btn" class="btn-admin" onclick="adminPanel()" style="display:none"><i class="fas fa-cog"></i> Админ</button>
                 </div>
             </div>
         </header>
 
-        <!-- Навигация -->
         <nav class="main-nav">
-            <button class="nav-btn active" onclick="showSection('cases-section')">
-                <i class="fas fa-box-open"></i> Кейсы
-            </button>
-            <button class="nav-btn" onclick="showSection('inventory-section')">
-                <i class="fas fa-backpack"></i> Инвентарь
-            </button>
-            <button class="nav-btn" onclick="showSection('withdrawals-section')">
-                <i class="fas fa-money-bill-wave"></i> Заявки на вывод
-            </button>
+            <button class="nav-btn active" onclick="showSection('cases-section')"><i class="fas fa-box-open"></i> Кейсы</button>
+            <button class="nav-btn" onclick="showSection('inventory-section')"><i class="fas fa-backpack"></i> Инвентарь</button>
+            <button class="nav-btn" onclick="showSection('withdrawals-section')"><i class="fas fa-money-bill-wave"></i> Заявки</button>
         </nav>
 
-        <!-- Секция с кейсами (по умолчанию активна) -->
         <section id="cases-section" class="main-section active">
-            <div class="section-header">
-                <h2><i class="fas fa-box-open"></i> Доступные кейсы</h2>
-                <p>Открывайте кейсы и получайте редкие скины!</p>
-            </div>
-            <div id="cases" class="cases-grid">
-                <div class="loading">Загрузка кейсов...</div>
-            </div>
+            <div class="section-header"><h2><i class="fas fa-box-open"></i> Доступные кейсы</h2><p>Открывайте кейсы и получайте редкие скины!</p></div>
+            <div id="cases" class="cases-grid"><div class="loading">Загрузка кейсов...</div></div>
         </section>
 
-        <!-- Секция инвентаря -->
         <section id="inventory-section" class="main-section">
             <div class="section-header">
                 <h2><i class="fas fa-backpack"></i> Ваш инвентарь</h2>
-                <div class="inventory-stats">
-                    <span><span id="inventory-total">0</span> предметов</span>
-                    <span>Общая стоимость: <span id="inventory-value">0</span> ₽</span>
-                </div>
+                <div class="inventory-stats"><span><span id="inventory-total">0</span> предметов</span><span>Стоимость: <span id="inventory-value">0</span> ₽</span></div>
             </div>
-            <div id="inventory-list" class="inventory-grid">
-                <div class="empty-state">
-                    <i class="fas fa-box-open"></i>
-                    <p>Инвентарь пуст</p>
-                </div>
-            </div>
-            <div class="inventory-actions">
-                <button class="btn-primary" onclick="showWithdraw()">
-                    <i class="fas fa-money-bill-wave"></i> Вывести средства
-                </button>
-            </div>
+            <div id="inventory-list" class="inventory-grid"><div class="empty-state"><i class="fas fa-box-open"></i><p>Инвентарь пуст</p></div></div>
+            <div class="inventory-actions"><button class="btn-primary" onclick="showWithdraw()"><i class="fas fa-money-bill-wave"></i> Вывести</button></div>
         </section>
 
-        <!-- Секция заявок на вывод -->
         <section id="withdrawals-section" class="main-section">
-            <div class="section-header">
-                <h2><i class="fas fa-money-bill-wave"></i> Заявки на вывод</h2>
-                <button class="btn-primary" onclick="showWithdraw()">
-                    <i class="fas fa-plus-circle"></i> Новая заявка
-                </button>
-            </div>
-            
+            <div class="section-header"><h2><i class="fas fa-money-bill-wave"></i> Заявки на вывод</h2><button class="btn-primary" onclick="showWithdraw()"><i class="fas fa-plus-circle"></i> Новая</button></div>
             <div class="withdrawals-container">
                 <div class="withdrawals-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #4cd96420; color: #4cd964;">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="pending-withdrawals">0</span>
-                            <span class="stat-label">Ожидают</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #007aff20; color: #007aff;">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="completed-withdrawals">0</span>
-                            <span class="stat-label">Выполнены</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: #ff950020; color: #ff9500;">
-                            <i class="fas fa-coins"></i>
-                        </div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="total-withdrawn">0</span>
-                            <span class="stat-label">Всего выведено</span>
-                        </div>
-                    </div>
+                    <div class="stat-card"><div class="stat-icon" style="background:#4cd96420;color:#4cd964"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-value" id="pending-withdrawals">0</span><span class="stat-label">Ожидают</span></div></div>
+                    <div class="stat-card"><div class="stat-icon" style="background:#007aff20;color:#007aff"><i class="fas fa-check-circle"></i></div><div class="stat-info"><span class="stat-value" id="completed-withdrawals">0</span><span class="stat-label">Выполнены</span></div></div>
+                    <div class="stat-card"><div class="stat-icon" style="background:#ff950020;color:#ff9500"><i class="fas fa-coins"></i></div><div class="stat-info"><span class="stat-value" id="total-withdrawn">0</span><span class="stat-label">Выведено</span></div></div>
                 </div>
-                
-                <div class="withdrawals-list">
-                    <h3><i class="fas fa-history"></i> История заявок</h3>
-                    <div id="withdrawals-history" class="withdrawals-history">
-                        <div class="empty-state">
-                            <i class="fas fa-file-invoice-dollar"></i>
-                            <p>У вас пока нет заявок на вывод</p>
-                            <button class="btn-primary" onclick="showWithdraw()">Создать первую заявку</button>
-                        </div>
-                    </div>
-                </div>
+                <div class="withdrawals-list"><h3><i class="fas fa-history"></i> История</h3><div id="withdrawals-history" class="withdrawals-history"><div class="empty-state"><i class="fas fa-file-invoice-dollar"></i><p>Нет заявок</p><button class="btn-primary" onclick="showWithdraw()">Создать заявку</button></div></div></div>
             </div>
         </section>
 
-        <!-- Модальные окна -->
-        
-        <!-- Модалка авторизации -->
-        <div id="auth-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-user-circle"></i> Вход / Регистрация</h3>
-                    <button class="close-btn" onclick="closeModal('auth-modal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="email"><i class="fas fa-envelope"></i> Email</label>
-                        <input id="email" type="email" placeholder="your@email.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="password"><i class="fas fa-lock"></i> Пароль</label>
-                        <input id="password" type="password" placeholder="Минимум 6 символов">
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn-primary btn-block" onclick="login()">
-                            <i class="fas fa-sign-in-alt"></i> Войти
-                        </button>
-                        <button class="btn-secondary btn-block" onclick="register()">
-                            <i class="fas fa-user-plus"></i> Зарегистрироваться
-                        </button>
-                    </div>
-                    <p id="auth-error" class="error-message"></p>
-                </div>
-            </div>
-        </div>
+        <div id="auth-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-user-circle"></i> Вход / Регистрация</h3><button class="close-btn" onclick="closeModal('auth-modal')">&times;</button></div><div class="modal-body">
+            <div class="form-group"><label for="email"><i class="fas fa-envelope"></i> Email</label><input id="email" type="email" placeholder="your@email.com"></div>
+            <div class="form-group"><label for="password"><i class="fas fa-lock"></i> Пароль</label><input id="password" type="password" placeholder="Минимум 6 символов"></div>
+            <div class="form-actions"><button class="btn-primary btn-block" onclick="login()"><i class="fas fa-sign-in-alt"></i> Войти</button><button class="btn-secondary btn-block" onclick="register()"><i class="fas fa-user-plus"></i> Регистрация</button></div>
+            <p id="auth-error" class="error-message"></p>
+        </div></div></div>
 
-        <!-- Модалка предпросмотра кейса -->
-        <div id="preview-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-box-open"></i> <span id="preview-title"></span></h3>
-                    <button class="close-btn" onclick="closeModal('preview-modal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="case-preview">
-                        <div class="case-price">
-                            <i class="fas fa-tag"></i> Стоимость: <span id="preview-price"></span> ₽
-                        </div>
-                        <div class="case-items">
-                            <h4><i class="fas fa-gift"></i> Возможные выигрыши:</h4>
-                            <div id="preview-items" class="preview-items-grid"></div>
-                        </div>
-                    </div>
-                    <div class="modal-actions">
-                        <button class="btn-primary btn-large" onclick="openCase()" id="open-btn">
-                            <i class="fas fa-unlock"></i> Открыть кейс
-                        </button>
-                        <button class="btn-secondary" onclick="closeModal('preview-modal')">
-                            <i class="fas fa-times"></i> Отмена
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="preview-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-box-open"></i> <span id="preview-title"></span></h3><button class="close-btn" onclick="closeModal('preview-modal')">&times;</button></div><div class="modal-body">
+            <div class="case-preview"><div class="case-price"><i class="fas fa-tag"></i> Стоимость: <span id="preview-price"></span> ₽</div><div class="case-items"><h4><i class="fas fa-gift"></i> Возможные выигрыши:</h4><div id="preview-items" class="preview-items-grid"></div></div></div>
+            <div class="modal-actions"><button class="btn-primary btn-large" onclick="openCase()" id="open-btn"><i class="fas fa-unlock"></i> Открыть</button><button class="btn-secondary" onclick="closeModal('preview-modal')"><i class="fas fa-times"></i> Отмена</button></div>
+        </div></div></div>
 
-        <!-- Модалка вывода средств -->
-        <div id="withdraw-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-money-bill-wave"></i> Вывод средств</h3>
-                    <button class="close-btn" onclick="closeModal('withdraw-modal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="balance-info">
-                        <div class="balance-card">
-                            <i class="fas fa-wallet"></i>
-                            <div>
-                                <span class="balance-label">Доступный баланс</span>
-                                <span class="balance-amount"><span id="withdraw-balance">0</span> ₽</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="withdraw-amount"><i class="fas fa-ruble-sign"></i> Сумма вывода</label>
-                        <input id="withdraw-amount" type="number" min="1000" placeholder="Минимум 1000 рублей">
-                        <small>Минимальная сумма вывода: 1 000 ₽</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="withdraw-tg"><i class="fab fa-telegram"></i> Telegram для связи</label>
-                        <input id="withdraw-tg" placeholder="@username">
-                        <small>Мы свяжемся с вами для подтверждения вывода</small>
-                    </div>
-                    
-                    <div class="modal-actions">
-                        <button class="btn-primary btn-block" onclick="createWithdraw()">
-                            <i class="fas fa-paper-plane"></i> Создать заявку
-                        </button>
-                        <button class="btn-secondary btn-block" onclick="closeModal('withdraw-modal')">
-                            <i class="fas fa-times"></i> Отмена
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="withdraw-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-money-bill-wave"></i> Вывод средств</h3><button class="close-btn" onclick="closeModal('withdraw-modal')">&times;</button></div><div class="modal-body">
+            <div class="balance-info"><div class="balance-card"><i class="fas fa-wallet"></i><div><span class="balance-label">Доступно</span><span class="balance-amount"><span id="withdraw-balance">0</span> ₽</span></div></div></div>
+            <div class="form-group"><label for="withdraw-amount"><i class="fas fa-ruble-sign"></i> Сумма</label><input id="withdraw-amount" type="number" min="1000" placeholder="От 1000 руб"><small>Минимум: 1 000 ₽</small></div>
+            <div class="form-group"><label for="withdraw-tg"><i class="fab fa-telegram"></i> Telegram</label><input id="withdraw-tg" placeholder="@username"><small>Для связи</small></div>
+            <div class="modal-actions"><button class="btn-primary btn-block" onclick="createWithdraw()"><i class="fas fa-paper-plane"></i> Создать</button><button class="btn-secondary btn-block" onclick="closeModal('withdraw-modal')"><i class="fas fa-times"></i> Отмена</button></div>
+        </div></div></div>
 
-        <!-- Модалка админ-панели -->
-        <div id="admin-modal" class="modal wide-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-cogs"></i> Админ-панель</h3>
-                    <button class="close-btn" onclick="closeModal('admin-modal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="admin-container">
-                        <!-- Левая колонка: управление кейсами -->
-                        <div class="admin-column">
-                            <div class="admin-section">
-                                <h4><i class="fas fa-box-open"></i> Управление кейсами</h4>
-                                <div class="admin-list" id="admin-cases-list">
-                                    <div class="empty-state small">
-                                        <i class="fas fa-box-open"></i>
-                                        <p>Нет созданных кейсов</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="admin-form">
-                                    <h5><i class="fas fa-plus-circle"></i> Создать новый кейс</h5>
-                                    <input id="new-case-name" placeholder="Название кейса" class="form-input">
-                                    <input id="new-case-price" type="number" placeholder="Цена (руб)" class="form-input">
-                                    <button class="btn-primary btn-block" onclick="createNewCase()">
-                                        <i class="fas fa-plus"></i> Создать кейс
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="admin-section">
-                                <h4><i class="fas fa-tshirt"></i> Управление скинами</h4>
-                                <div class="admin-list" id="admin-skins-list">
-                                    <div class="empty-state small">
-                                        <i class="fas fa-tshirt"></i>
-                                        <p>Нет созданных скинов</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="admin-form">
-                                    <h5><i class="fas fa-plus-circle"></i> Создать новый скин</h5>
-                                    <input id="new-skin-name" placeholder="Название скина" class="form-input">
-                                    <input id="new-skin-price" type="number" placeholder="Цена (руб)" value="100" class="form-input">
-                                    <button class="btn-primary btn-block" onclick="createNewSkin()">
-                                        <i class="fas fa-plus"></i> Создать скин
-                                    </button>
-                                </div>
-                            </div>
+        <div id="admin-modal" class="modal wide-modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-cogs"></i> Админ-панель</h3><button class="close-btn" onclick="closeModal('admin-modal')">&times;</button></div><div class="modal-body">
+            <div class="admin-container">
+                <div class="admin-column"><div class="admin-section"><h4><i class="fas fa-box-open"></i> Кейсы</h4><div id="admin-cases-list" class="admin-list"><div class="empty-state small"><i class="fas fa-box-open"></i><p>Нет кейсов</p></div></div>
+                    <div class="admin-form"><h5><i class="fas fa-plus-circle"></i> Новый кейс</h5><input id="new-case-name" placeholder="Название" class="form-input"><input id="new-case-price" type="number" placeholder="Цена" class="form-input"><button class="btn-primary btn-block" onclick="createNewCase()"><i class="fas fa-plus"></i> Создать</button></div></div>
+                    <div class="admin-section"><h4><i class="fas fa-tshirt"></i> Скины</h4><div id="admin-skins-list" class="admin-list"><div class="empty-state small"><i class="fas fa-tshirt"></i><p>Нет скинов</p></div></div>
+                    <div class="admin-form"><h5><i class="fas fa-plus-circle"></i> Новый скин</h5><input id="new-skin-name" placeholder="Название" class="form-input"><input id="new-skin-price" type="number" placeholder="Цена" value="100" class="form-input"><button class="btn-primary btn-block" onclick="createNewSkin()"><i class="fas fa-plus"></i> Создать</button></div></div></div>
+                <div class="admin-column"><div class="admin-section"><h4><i class="fas fa-sliders-h"></i> Настройка кейса</h4><div id="selected-case-info" class="selected-case-info"><div class="empty-state small"><i class="fas fa-mouse-pointer"></i><p>Выберите кейс</p></div></div>
+                    <div class="case-configuration"><h5><i class="fas fa-dice"></i> Скины (шанс 1-100%)</h5>
+                        <div id="case-drop-zone" class="drop-zone" ondrop="dropOnCase(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                            <div id="case-skins-list" class="drop-zone-content"><i class="fas fa-arrow-left"></i><p>Перетащите скины</p><small>Укажите шанс при перетаскивании</small></div>
                         </div>
-                        
-                        <!-- Правая колонка: настройка состава кейса -->
-                        <div class="admin-column">
-                            <div class="admin-section">
-                                <h4><i class="fas fa-sliders-h"></i> Настройка кейса</h4>
-                                <div id="selected-case-info" class="selected-case-info">
-                                    <div class="empty-state small">
-                                        <i class="fas fa-mouse-pointer"></i>
-                                        <p>Выберите кейс из списка слева</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="case-configuration">
-                                    <h5><i class="fas fa-dice"></i> Скины в кейсе (шанс 1-100%)</h5>
-                                    <div id="case-drop-zone" class="drop-zone" 
-                                         ondrop="dropOnCase(event)" 
-                                         ondragover="allowDrop(event)"
-                                         ondragleave="dragLeave(event)">
-                                        <div id="case-skins-list" class="drop-zone-content">
-                                            <i class="fas fa-arrow-left"></i>
-                                            <p>Перетащите сюда скины из левой колонки</p>
-                                            <small>Укажите шанс выпадения (1-100) при перетаскивании</small>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="case-actions">
-                                        <button class="btn-success btn-block" onclick="saveCaseSkins()">
-                                            <i class="fas fa-save"></i> Сохранить состав кейса
-                                        </button>
-                                        <button class="btn-secondary btn-block" onclick="clearCaseSkins()">
-                                            <i class="fas fa-trash"></i> Очистить кейс
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="admin-tip">
-                                        <i class="fas fa-lightbulb"></i>
-                                        <p>Перетащите скины в зону выше. Шанс указывается при перетаскивании (1-100). Можно изменить шанс в поле ввода рядом с каждым скином.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <div class="case-actions"><button class="btn-success btn-block" onclick="saveCaseSkins()"><i class="fas fa-save"></i> Сохранить</button><button class="btn-secondary btn-block" onclick="clearCaseSkins()"><i class="fas fa-trash"></i> Очистить</button></div>
+                        <div class="admin-tip"><i class="fas fa-lightbulb"></i><p>Перетащите скины. Шанс 1-100. Можно изменить в поле ввода.</p></div>
+                    </div></div></div>
             </div>
-        </div>
+        </div></div></div>
     </div>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
