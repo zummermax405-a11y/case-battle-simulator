@@ -3,97 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Case Simulator</title>
+    <title>Case Sim</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <header class="main-header">
-            <div class="header-left">
-                <div class="logo"><i class="fas fa-gamepad"></i><h1>Case Simulator</h1></div>
-            </div>
-            <div class="user-panel">
-                <div class="user-info">
-                    <div class="user-balance"><i class="fas fa-coins"></i><span id="balance">0</span> ₽</div>
-                    <div class="user-inventory"><i class="fas fa-tshirt"></i><span id="inventory-count">0</span></div>
-                    <div class="user-email" id="user-email">Гость</div>
-                </div>
-                <div class="auth-buttons">
-                    <button id="auth-btn" class="btn-primary" onclick="showAuth()"><i class="fas fa-sign-in-alt"></i> Войти</button>
-                    <button id="logout-btn" class="btn-secondary" onclick="logout()" style="display:none"><i class="fas fa-sign-out-alt"></i> Выйти</button>
-                    <button id="admin-btn" class="btn-admin" onclick="adminPanel()" style="display:none"><i class="fas fa-cog"></i> Админ</button>
-                </div>
+        <header>
+            <h1><i class="fas fa-gamepad"></i> Case Sim</h1>
+            <div class="user-info">
+                <span id="user-email">Гость</span>
+                <div class="balance">💰 <span id="balance">1000</span> ₽</div>
+                <button id="auth-btn" onclick="showAuth()">Войти</button>
+                <button id="logout-btn" onclick="logout()" style="display:none">Выйти</button>
             </div>
         </header>
 
-        <nav class="main-nav">
-            <button class="nav-btn active" onclick="showSection('cases-section')"><i class="fas fa-box-open"></i> Кейсы</button>
-            <button class="nav-btn" onclick="showSection('inventory-section')"><i class="fas fa-backpack"></i> Инвентарь</button>
-            <button class="nav-btn" onclick="showSection('withdrawals-section')"><i class="fas fa-money-bill-wave"></i> Заявки</button>
-        </nav>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('cases')">Кейсы</button>
+            <button class="tab" onclick="showTab('inventory')">Инвентарь</button>
+            <button class="tab" onclick="showTab('admin')" id="admin-tab" style="display:none">Админ</button>
+        </div>
 
-        <section id="cases-section" class="main-section active">
-            <div class="section-header"><h2><i class="fas fa-box-open"></i> Доступные кейсы</h2><p>Открывайте кейсы и получайте редкие скины!</p></div>
-            <div id="cases" class="cases-grid"><div class="loading">Загрузка кейсов...</div></div>
-        </section>
-
-        <section id="inventory-section" class="main-section">
-            <div class="section-header">
-                <h2><i class="fas fa-backpack"></i> Ваш инвентарь</h2>
-                <div class="inventory-stats"><span><span id="inventory-total">0</span> предметов</span><span>Стоимость: <span id="inventory-value">0</span> ₽</span></div>
+        <!-- Вкладка с кейсами -->
+        <div id="cases-tab" class="tab-content active">
+            <div class="cases-grid" id="cases-list">
+                <!-- Кейсы загружаются через JS -->
             </div>
-            <div id="inventory-list" class="inventory-grid"><div class="empty-state"><i class="fas fa-box-open"></i><p>Инвентарь пуст</p></div></div>
-            <div class="inventory-actions"><button class="btn-primary" onclick="showWithdraw()"><i class="fas fa-money-bill-wave"></i> Вывести</button></div>
-        </section>
+        </div>
 
-        <section id="withdrawals-section" class="main-section">
-            <div class="section-header"><h2><i class="fas fa-money-bill-wave"></i> Заявки на вывод</h2><button class="btn-primary" onclick="showWithdraw()"><i class="fas fa-plus-circle"></i> Новая</button></div>
-            <div class="withdrawals-container">
-                <div class="withdrawals-stats">
-                    <div class="stat-card"><div class="stat-icon" style="background:#4cd96420;color:#4cd964"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-value" id="pending-withdrawals">0</span><span class="stat-label">Ожидают</span></div></div>
-                    <div class="stat-card"><div class="stat-icon" style="background:#007aff20;color:#007aff"><i class="fas fa-check-circle"></i></div><div class="stat-info"><span class="stat-value" id="completed-withdrawals">0</span><span class="stat-label">Выполнены</span></div></div>
-                    <div class="stat-card"><div class="stat-icon" style="background:#ff950020;color:#ff9500"><i class="fas fa-coins"></i></div><div class="stat-info"><span class="stat-value" id="total-withdrawn">0</span><span class="stat-label">Выведено</span></div></div>
+        <!-- Вкладка с инвентарем -->
+        <div id="inventory-tab" class="tab-content">
+            <div class="inventory-grid" id="inventory-list">
+                <!-- Инвентарь загружается через JS -->
+            </div>
+        </div>
+
+        <!-- Вкладка админки -->
+        <div id="admin-tab" class="tab-content">
+            <div class="admin-panel">
+                <h3>Создать кейс</h3>
+                <input type="text" id="case-name" placeholder="Название кейса">
+                <input type="number" id="case-price" placeholder="Цена">
+                <button onclick="createCase()">Создать</button>
+
+                <h3>Создать скин</h3>
+                <input type="text" id="skin-name" placeholder="Название скина">
+                <input type="number" id="skin-price" placeholder="Цена">
+                <button onclick="createSkin()">Создать</button>
+
+                <h3>Добавить скин в кейс</h3>
+                <select id="case-select">
+                    <option value="">Выберите кейс</option>
+                </select>
+                <select id="skin-select">
+                    <option value="">Выберите скин</option>
+                </select>
+                <input type="number" id="skin-chance" placeholder="Шанс (1-100)" min="1" max="100">
+                <button onclick="addSkinToCase()">Добавить</button>
+
+                <h3>Открыть кейс (тест)</h3>
+                <select id="test-case">
+                    <option value="">Выберите кейс для теста</option>
+                </select>
+                <button onclick="testOpenCase()">Открыть</button>
+                <div id="test-result"></div>
+            </div>
+        </div>
+
+        <!-- Модалка авторизации -->
+        <div id="auth-modal" class="modal">
+            <div class="modal-content">
+                <h3>Вход / Регистрация</h3>
+                <input type="email" id="email" placeholder="Email">
+                <input type="password" id="password" placeholder="Пароль">
+                <button onclick="login()">Войти</button>
+                <button onclick="register()">Регистрация</button>
+                <button onclick="closeModal()">Отмена</button>
+                <p id="auth-error"></p>
+            </div>
+        </div>
+
+        <!-- Модалка открытия кейса -->
+        <div id="open-modal" class="modal">
+            <div class="modal-content">
+                <h3>Открытие кейса</h3>
+                <div id="roulette">
+                    <div class="roulette-container">
+                        <div class="roulette-items" id="roulette-items"></div>
+                    </div>
+                    <div class="roulette-center"></div>
                 </div>
-                <div class="withdrawals-list"><h3><i class="fas fa-history"></i> История</h3><div id="withdrawals-history" class="withdrawals-history"><div class="empty-state"><i class="fas fa-file-invoice-dollar"></i><p>Нет заявок</p><button class="btn-primary" onclick="showWithdraw()">Создать заявку</button></div></div></div>
+                <div id="win-result"></div>
+                <button onclick="startRoulette()" id="spin-btn">Крутить</button>
+                <button onclick="closeOpenModal()">Закрыть</button>
             </div>
-        </section>
-
-        <div id="auth-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-user-circle"></i> Вход / Регистрация</h3><button class="close-btn" onclick="closeModal('auth-modal')">&times;</button></div><div class="modal-body">
-            <div class="form-group"><label for="email"><i class="fas fa-envelope"></i> Email</label><input id="email" type="email" placeholder="your@email.com"></div>
-            <div class="form-group"><label for="password"><i class="fas fa-lock"></i> Пароль</label><input id="password" type="password" placeholder="Минимум 6 символов"></div>
-            <div class="form-actions"><button class="btn-primary btn-block" onclick="login()"><i class="fas fa-sign-in-alt"></i> Войти</button><button class="btn-secondary btn-block" onclick="register()"><i class="fas fa-user-plus"></i> Регистрация</button></div>
-            <p id="auth-error" class="error-message"></p>
-        </div></div></div>
-
-        <div id="preview-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-box-open"></i> <span id="preview-title"></span></h3><button class="close-btn" onclick="closeModal('preview-modal')">&times;</button></div><div class="modal-body">
-            <div class="case-preview"><div class="case-price"><i class="fas fa-tag"></i> Стоимость: <span id="preview-price"></span> ₽</div><div class="case-items"><h4><i class="fas fa-gift"></i> Возможные выигрыши:</h4><div id="preview-items" class="preview-items-grid"></div></div></div>
-            <div class="modal-actions"><button class="btn-primary btn-large" onclick="openCase()" id="open-btn"><i class="fas fa-unlock"></i> Открыть</button><button class="btn-secondary" onclick="closeModal('preview-modal')"><i class="fas fa-times"></i> Отмена</button></div>
-        </div></div></div>
-
-        <div id="withdraw-modal" class="modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-money-bill-wave"></i> Вывод средств</h3><button class="close-btn" onclick="closeModal('withdraw-modal')">&times;</button></div><div class="modal-body">
-            <div class="balance-info"><div class="balance-card"><i class="fas fa-wallet"></i><div><span class="balance-label">Доступно</span><span class="balance-amount"><span id="withdraw-balance">0</span> ₽</span></div></div></div>
-            <div class="form-group"><label for="withdraw-amount"><i class="fas fa-ruble-sign"></i> Сумма</label><input id="withdraw-amount" type="number" min="1000" placeholder="От 1000 руб"><small>Минимум: 1 000 ₽</small></div>
-            <div class="form-group"><label for="withdraw-tg"><i class="fab fa-telegram"></i> Telegram</label><input id="withdraw-tg" placeholder="@username"><small>Для связи</small></div>
-            <div class="modal-actions"><button class="btn-primary btn-block" onclick="createWithdraw()"><i class="fas fa-paper-plane"></i> Создать</button><button class="btn-secondary btn-block" onclick="closeModal('withdraw-modal')"><i class="fas fa-times"></i> Отмена</button></div>
-        </div></div></div>
-
-        <div id="admin-modal" class="modal wide-modal"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-cogs"></i> Админ-панель</h3><button class="close-btn" onclick="closeModal('admin-modal')">&times;</button></div><div class="modal-body">
-            <div class="admin-container">
-                <div class="admin-column"><div class="admin-section"><h4><i class="fas fa-box-open"></i> Кейсы</h4><div id="admin-cases-list" class="admin-list"><div class="empty-state small"><i class="fas fa-box-open"></i><p>Нет кейсов</p></div></div>
-                    <div class="admin-form"><h5><i class="fas fa-plus-circle"></i> Новый кейс</h5><input id="new-case-name" placeholder="Название" class="form-input"><input id="new-case-price" type="number" placeholder="Цена" class="form-input"><button class="btn-primary btn-block" onclick="createNewCase()"><i class="fas fa-plus"></i> Создать</button></div></div>
-                    <div class="admin-section"><h4><i class="fas fa-tshirt"></i> Скины</h4><div id="admin-skins-list" class="admin-list"><div class="empty-state small"><i class="fas fa-tshirt"></i><p>Нет скинов</p></div></div>
-                    <div class="admin-form"><h5><i class="fas fa-plus-circle"></i> Новый скин</h5><input id="new-skin-name" placeholder="Название" class="form-input"><input id="new-skin-price" type="number" placeholder="Цена" value="100" class="form-input"><button class="btn-primary btn-block" onclick="createNewSkin()"><i class="fas fa-plus"></i> Создать</button></div></div></div>
-                <div class="admin-column"><div class="admin-section"><h4><i class="fas fa-sliders-h"></i> Настройка кейса</h4><div id="selected-case-info" class="selected-case-info"><div class="empty-state small"><i class="fas fa-mouse-pointer"></i><p>Выберите кейс</p></div></div>
-                    <div class="case-configuration"><h5><i class="fas fa-dice"></i> Скины (шанс 1-100%)</h5>
-                        <div id="case-drop-zone" class="drop-zone" ondrop="dropOnCase(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
-                            <div id="case-skins-list" class="drop-zone-content"><i class="fas fa-arrow-left"></i><p>Перетащите скины</p><small>Укажите шанс при перетаскивании</small></div>
-                        </div>
-                        <div class="case-actions"><button class="btn-success btn-block" onclick="saveCaseSkins()"><i class="fas fa-save"></i> Сохранить</button><button class="btn-secondary btn-block" onclick="clearCaseSkins()"><i class="fas fa-trash"></i> Очистить</button></div>
-                        <div class="admin-tip"><i class="fas fa-lightbulb"></i><p>Перетащите скины. Шанс 1-100. Можно изменить в поле ввода.</p></div>
-                    </div></div></div>
-            </div>
-        </div></div></div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
