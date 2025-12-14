@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS:GO Case Battle Simulator - Виртуальный симулятор</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <meta name="description" content="Бесплатный виртуальный симулятор открытия кейсов CS:GO. Игра с виртуальной валютой без реальных денег.">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <header>
+            <h1>🎮 CS:GO Case Battle Simulator</h1>
+            <p class="subtitle">ВИРТУАЛЬНЫЙ СИМУЛЯТОР • БЕЗ РЕАЛЬНЫХ ДЕНЕГ • ТОЛЬКО ДЛЯ РАЗВЛЕЧЕНИЯ</p>
+        </header>
+
+        <!-- Статистика игрока -->
+        <div class="player-stats">
+            <div class="stat-card">
+                <h3>💰 Баланс</h3>
+                <p class="stat-value" id="balance">10,000</p>
+                <span class="currency">виртуальных монет</span>
+            </div>
+            <div class="stat-card">
+                <h3>🎒 Инвентарь</h3>
+                <p class="stat-value" id="inventory-count">0</p>
+                <span class="currency">предметов</span>
+            </div>
+            <div class="stat-card">
+                <h3>📊 Открыто кейсов</h3>
+                <p class="stat-value" id="cases-opened">0</p>
+                <span class="currency">всего</span>
+            </div>
+        </div>
+
+        <!-- Бонусы и кнопки -->
+        <div class="actions">
+            <button class="btn btn-bonus" onclick="claimDailyBonus()">
+                🎁 Получить ежедневный бонус
+            </button>
+            <button class="btn btn-add-coins" onclick="addCoins(1000)">
+                💰 +1,000 монет (тест)
+            </button>
+            <button class="btn btn-reset" onclick="resetGame()">
+                🔄 Сбросить прогресс
+            </button>
+        </div>
+
+        <!-- Раздел с кейсами -->
+        <section class="cases-section">
+            <h2>📦 Доступные кейсы</h2>
+            <p class="section-description">Выберите кейс для открытия. Каждый кейс содержит виртуальные предметы разной редкости.</p>
+            
+            <div class="cases-grid" id="cases-container">
+                <!-- Кейсы будут генерироваться через JS -->
+            </div>
+        </section>
+
+        <!-- Анимация открытия кейса -->
+        <div class="case-opening-screen" id="opening-screen" style="display: none;">
+            <div class="opening-content">
+                <h2>Открываем кейс...</h2>
+                <div class="case-spinner" id="case-spinner">
+                    <div class="spinner-item" id="spinner-item">???</div>
+                </div>
+                <div class="result" id="opening-result"></div>
+                <button class="btn btn-close" onclick="closeOpeningScreen()">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+
+        <!-- Инвентарь -->
+        <section class="inventory-section">
+            <h2>🎒 Ваш инвентарь</h2>
+            <div class="inventory-controls">
+                <button class="btn btn-sort" onclick="sortInventory('rarity')">
+                    Сортировать по редкости
+                </button>
+                <button class="btn btn-sort" onclick="sortInventory('value')">
+                    Сортировать по ценности
+                </button>
+            </div>
+            <div class="inventory-grid" id="inventory-container">
+                <!-- Скины будут появляться здесь -->
+                <p class="empty-inventory">Ваш инвентарь пуст. Откройте кейсы, чтобы получить предметы!</p>
+            </div>
+        </section>
+
+        <!-- Достижения -->
+        <section class="achievements-section">
+            <h2>🏆 Достижения</h2>
+            <div class="achievements-grid" id="achievements-container">
+                <!-- Достижения будут здесь -->
+            </div>
+        </section>
+
+        <!-- Предупреждение -->
+        <div class="warning">
+            <h3>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ</h3>
+            <p>Это <strong>виртуальный симулятор для развлечения</strong>. Здесь нет:</p>
+            <ul>
+                <li>✅ Реальных денег или ставок</li>
+                <li>✅ Связи с Steam или реальными скинами</li>
+                <li>✅ Возможности выиграть что-либо реальное</li>
+                <li>✅ Азартной игры на деньги</li>
+            </ul>
+            <p>Проект создан в образовательных целях. Скины и валюта — полностью виртуальные.</p>
+        </div>
+
+        <!-- Футер -->
+        <footer>
+            <p>CS:GO Case Battle Simulator © 2024 • Виртуальный симулятор • Создано для образовательных целей</p>
+            <p>Это не официальный проект Valve или Steam. Counter-Strike и CS:GO являются товарными знаками Valve Corporation.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
