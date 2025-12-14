@@ -1,6 +1,6 @@
 // script.js - Исправленная версия
 
-const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_URL = 'https://jttsgizkuyipolcnvanc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
