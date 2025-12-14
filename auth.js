@@ -254,6 +254,180 @@ async function checkAuthOnLoad() {
     }
 }
 
+// Обновление интерфейса в зависимости от статуса авторизации
+function updateAuthUI() {
+    const authButtons = document.getElementById('auth-buttons');
+    const userProfile = document.getElementById('user-profile');
+    const currentUser = getCurrentUser();
+    
+    console.log('Обновление интерфейса авторизации, пользователь:', currentUser);
+    
+    if (currentUser) {
+        // Показываем профиль пользователя
+        if (authButtons) {
+            authButtons.style.display = 'none';
+        }
+        
+        if (userProfile) {
+            userProfile.style.display = 'flex';
+            
+            // Обновляем данные пользователя
+            document.getElementById('user-email-display').textContent = 
+                currentUser.email || 'Пользователь';
+            
+            // Создаем аватар из первой буквы email
+            const avatarElement = document.getElementById('user-avatar');
+            if (avatarElement && currentUser.email) {
+                const firstLetter = currentUser.email.charAt(0).toUpperCase();
+                avatarElement.textContent = firstLetter;
+            }
+            
+            // Обновляем баланс (если есть в данных)
+            const balanceDisplay = document.getElementById('user-balance-display');
+            if (balanceDisplay) {
+                if (currentUser.balance !== undefined) {
+                    balanceDisplay.textContent = formatNumber(currentUser.balance);
+                } else if (gameState && gameState.balance !== undefined) {
+                    balanceDisplay.textContent = formatNumber(gameState.balance);
+                }
+            }
+        }
+        
+        // Показываем кнопку админ-панели для админов
+        if (currentUser.role === 'admin') {
+            const adminSection = document.getElementById('admin-section');
+            if (adminSection) {
+                adminSection.style.display = 'flex';
+            }
+        }
+        
+    } else {
+        // Показываем кнопки входа
+        if (authButtons) {
+            authButtons.style.display = 'block';
+        }
+        
+        if (userProfile) {
+            userProfile.style.display = 'none';
+        }
+        
+        // Скрываем админ-панель
+        const adminSection = document.getElementById('admin-section');
+        if (adminSection) {
+            adminSection.style.display = 'none';
+        }
+    }
+}
+
+// Форматирование чисел (добавьте в auth.js если нет)
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// Проверка авторизации при загрузке страницы
+async function checkAuthOnLoad() {
+    console.log('🔍 Проверка авторизации...');
+    
+    try {
+        // Проверяем, есть ли сохраненная сессия в Supabase
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error('Ошибка получения сессии:', error);
+            // Очищаем данные при ошибке
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('current_user');
+            updateAuthUI();
+            return;
+        }
+        
+        if (data.session) {
+            console.log('✅ Найдена активная сессия');
+            
+            // Получаем данные пользователя из таблицы users
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', data.session.user.id)
+                .single();
+            
+            if (userError) {
+                console.error('Ошибка получения данных пользователя:', userError);
+                
+                // Если пользователя нет в таблице users, создаем запись
+                if (userError.code === 'PGRST116') {
+                    const { data: newUser, error: createError } = await supabase
+                        .from('users')
+                        .insert([{
+                            id: data.session.user.id,
+                            email: data.session.user.email,
+                            balance: 10000,
+                            role: 'user',
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (createError) {
+                        console.error('Ошибка создания записи пользователя:', createError);
+                        throw createError;
+                    }
+                    
+                    // Сохраняем данные нового пользователя
+                    localStorage.setItem('auth_token', data.session.access_token);
+                    localStorage.setItem('current_user', JSON.stringify(newUser));
+                    currentUser = newUser;
+                    
+                } else {
+                    throw userError;
+                }
+            } else {
+                // Сохраняем данные существующего пользователя
+                localStorage.setItem('auth_token', data.session.access_token);
+                localStorage.setItem('current_user', JSON.stringify(userData));
+                currentUser = userData;
+            }
+            
+            console.log('👤 Пользователь загружен:', currentUser);
+            
+        } else {
+            console.log('❌ Активная сессия не найдена');
+            // Очищаем данные если нет сессии
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('current_user');
+            currentUser = null;
+        }
+        
+        // Обновляем интерфейс
+        updateAuthUI();
+        
+        // Если пользователь авторизован, загружаем данные игры
+        if (currentUser && window.initGame) {
+            console.log('🎮 Запускаем игру для авторизованного пользователя');
+            setTimeout(() => window.initGame(), 500);
+        }
+        
+    } catch (error) {
+        console.error('❌ Критическая ошибка проверки авторизации:', error);
+        // Очищаем все данные при ошибке
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('current_user');
+        currentUser = null;
+        updateAuthUI();
+    }
+}
+
+// Инициализация авторизации при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 Страница загружена, инициализируем авторизацию...');
+    
+    // Проверяем авторизацию
+    checkAuthOnLoad();
+    
+    // Периодически проверяем обновления сессии
+    setInterval(checkAuthOnLoad, 5 * 60 * 1000); // Каждые 5 минут
+});
+
 // Экспорт функций
 window.showAuthModal = showAuthModal;
 window.closeAuthModal = closeAuthModal;
