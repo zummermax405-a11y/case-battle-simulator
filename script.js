@@ -43,7 +43,7 @@ function updateUI() {
     const logoutBtn = document.getElementById('logout-btn');
     const adminBtn = document.getElementById('admin-btn');
     const balance = document.getElementById('balance');
-    const inventoryCount = document.getElementById('inventory-count');
+    const inventoryCount = document.getElementById('inventory');
     
     if (currentUser) {
         userEmail.textContent = currentUser.email;
