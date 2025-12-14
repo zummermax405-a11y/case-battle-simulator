@@ -22,52 +22,19 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('cases')">Кейсы</button>
             <button class="tab" onclick="showTab('inventory')">Инвентарь</button>
-            <button class="tab" onclick="showTab('admin')" id="admin-tab" style="display:none">Админ</button>
         </div>
 
         <!-- Вкладка с кейсами -->
         <div id="cases-tab" class="tab-content active">
             <div class="cases-grid" id="cases-list">
-                <!-- Кейсы загружаются через JS -->
+                <div class="loading">Загрузка кейсов...</div>
             </div>
         </div>
 
         <!-- Вкладка с инвентарем -->
         <div id="inventory-tab" class="tab-content">
             <div class="inventory-grid" id="inventory-list">
-                <!-- Инвентарь загружается через JS -->
-            </div>
-        </div>
-
-        <!-- Вкладка админки -->
-        <div id="admin-tab" class="tab-content">
-            <div class="admin-panel">
-                <h3>Создать кейс</h3>
-                <input type="text" id="case-name" placeholder="Название кейса">
-                <input type="number" id="case-price" placeholder="Цена">
-                <button onclick="createCase()">Создать</button>
-
-                <h3>Создать скин</h3>
-                <input type="text" id="skin-name" placeholder="Название скина">
-                <input type="number" id="skin-price" placeholder="Цена">
-                <button onclick="createSkin()">Создать</button>
-
-                <h3>Добавить скин в кейс</h3>
-                <select id="case-select">
-                    <option value="">Выберите кейс</option>
-                </select>
-                <select id="skin-select">
-                    <option value="">Выберите скин</option>
-                </select>
-                <input type="number" id="skin-chance" placeholder="Шанс (1-100)" min="1" max="100">
-                <button onclick="addSkinToCase()">Добавить</button>
-
-                <h3>Открыть кейс (тест)</h3>
-                <select id="test-case">
-                    <option value="">Выберите кейс для теста</option>
-                </select>
-                <button onclick="testOpenCase()">Открыть</button>
-                <div id="test-result"></div>
+                <div class="empty">Войдите в систему чтобы увидеть инвентарь</div>
             </div>
         </div>
 
@@ -77,9 +44,11 @@
                 <h3>Вход / Регистрация</h3>
                 <input type="email" id="email" placeholder="Email">
                 <input type="password" id="password" placeholder="Пароль">
-                <button onclick="login()">Войти</button>
-                <button onclick="register()">Регистрация</button>
-                <button onclick="closeModal()">Отмена</button>
+                <div class="modal-buttons">
+                    <button onclick="login()">Войти</button>
+                    <button onclick="register()">Регистрация</button>
+                    <button onclick="closeModal()">Отмена</button>
+                </div>
                 <p id="auth-error"></p>
             </div>
         </div>
@@ -87,16 +56,18 @@
         <!-- Модалка открытия кейса -->
         <div id="open-modal" class="modal">
             <div class="modal-content">
-                <h3>Открытие кейса</h3>
-                <div id="roulette">
-                    <div class="roulette-container">
-                        <div class="roulette-items" id="roulette-items"></div>
+                <h3 id="case-open-title">Открытие кейса</h3>
+                <div class="roulette-container">
+                    <div class="roulette-wheel" id="roulette-wheel">
+                        <!-- Рулетка будет генерироваться через JS -->
                     </div>
-                    <div class="roulette-center"></div>
+                    <div class="roulette-pointer">▼</div>
                 </div>
-                <div id="win-result"></div>
-                <button onclick="startRoulette()" id="spin-btn">Крутить</button>
-                <button onclick="closeOpenModal()">Закрыть</button>
+                <div id="win-result" class="win-result"></div>
+                <div class="modal-buttons">
+                    <button onclick="spinRoulette()" id="spin-btn">Крутить за <span id="case-price">100</span> ₽</button>
+                    <button onclick="closeOpenModal()">Закрыть</button>
+                </div>
             </div>
         </div>
     </div>

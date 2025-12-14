@@ -2,11 +2,11 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background: #1a1a2e;
+    background: #0f172a;
     color: white;
     min-height: 100vh;
     padding: 20px;
@@ -21,10 +21,11 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #16213e;
+    background: #1e293b;
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 20px;
+    border: 1px solid #334155;
 }
 
 .user-info {
@@ -34,9 +35,25 @@ header {
 }
 
 .balance {
-    background: #0f3460;
+    background: #0f766e;
     padding: 8px 15px;
     border-radius: 5px;
+    font-weight: bold;
+}
+
+button {
+    padding: 10px 20px;
+    background: #3b82f6;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #2563eb;
 }
 
 .tabs {
@@ -46,23 +63,26 @@ header {
 }
 
 .tab {
-    padding: 10px 20px;
-    background: #0f3460;
+    padding: 12px 24px;
+    background: #1e293b;
     border: none;
-    color: white;
+    color: #94a3b8;
     border-radius: 5px;
     cursor: pointer;
+    font-size: 16px;
 }
 
 .tab.active {
-    background: #e94560;
+    background: #3b82f6;
+    color: white;
 }
 
 .tab-content {
     display: none;
     padding: 20px;
-    background: #16213e;
+    background: #1e293b;
     border-radius: 10px;
+    border: 1px solid #334155;
 }
 
 .tab-content.active {
@@ -71,20 +91,43 @@ header {
 
 .cases-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
 }
 
 .case-card {
-    background: #0f3460;
-    padding: 20px;
+    background: #0f172a;
+    padding: 25px;
     border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.3s;
+    transition: all 0.3s;
+    border: 2px solid #334155;
+    text-align: center;
 }
 
 .case-card:hover {
     transform: translateY(-5px);
+    border-color: #3b82f6;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.case-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: #3b82f6;
+}
+
+.case-name {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.case-price {
+    color: #fbbf24;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
 }
 
 .inventory-grid {
@@ -94,30 +137,21 @@ header {
 }
 
 .skin-card {
-    background: #0f3460;
-    padding: 15px;
+    background: #0f172a;
+    padding: 20px;
     border-radius: 8px;
     text-align: center;
+    border: 1px solid #334155;
 }
 
-.admin-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+.skin-name {
+    font-weight: 600;
+    margin-bottom: 5px;
 }
 
-.admin-panel input,
-.admin-panel select,
-.admin-panel button {
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
-}
-
-.admin-panel button {
-    background: #e94560;
-    color: white;
-    cursor: pointer;
+.skin-price {
+    color: #fbbf24;
+    font-weight: 700;
 }
 
 .modal {
@@ -130,62 +164,101 @@ header {
     background: rgba(0,0,0,0.8);
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 }
 
 .modal-content {
-    background: #16213e;
+    background: #1e293b;
     padding: 30px;
-    border-radius: 10px;
+    border-radius: 15px;
     max-width: 500px;
     width: 90%;
+    border: 1px solid #334155;
 }
 
-#roulette {
+.modal-content h3 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #3b82f6;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    flex: 1;
+}
+
+.roulette-container {
     position: relative;
     width: 400px;
     height: 400px;
     margin: 20px auto;
     overflow: hidden;
     border-radius: 50%;
-    background: #0f3460;
+    background: #0f172a;
+    border: 3px solid #3b82f6;
 }
 
-.roulette-container {
+.roulette-wheel {
     width: 100%;
     height: 100%;
     position: relative;
-}
-
-.roulette-items {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform-origin: 0 0;
-    transition: transform 5s cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-
-.roulette-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 50px;
-    height: 50px;
-    background: #e94560;
-    border-radius: 50%;
-    z-index: 10;
+    transition: transform 4s cubic-bezier(0.17, 0.67, 0.25, 1);
 }
 
 .roulette-item {
     position: absolute;
-    width: 60px;
-    height: 60px;
-    background: #0f3460;
-    border: 2px solid #e94560;
-    border-radius: 8px;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    height: 50%;
+    transform-origin: 0 100%;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-    font-size: 12px;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+}
+
+.roulette-pointer {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ef4444;
+    font-size: 30px;
+    z-index: 10;
+}
+
+.win-result {
+    text-align: center;
+    padding: 20px;
+    margin: 20px 0;
+    background: #0f172a;
+    border-radius: 10px;
+    border: 2px solid #10b981;
+}
+
+.loading, .empty {
+    text-align: center;
+    padding: 50px;
+    color: #94a3b8;
+    font-size: 18px;
 }
