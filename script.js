@@ -1,7 +1,7 @@
 // Конфиг
 const WORKER = 'https://mute-night-5909.zummer-max405.workers.dev';
 const SB_URL = 'https://jttsgizkuyipolcnvanc.supabase.co';
-const SB_KEY = 'sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
+const SB_KEY = 'sb_secret_ON6KuYuXQoM3NQuOglwMdg_crFZuiy6';
 const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
 // Состояние
