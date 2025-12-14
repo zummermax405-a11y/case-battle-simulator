@@ -2,7 +2,7 @@
 const WORKER = 'https://mute-night-5909.zummer-max405.workers.dev';
 const SB_URL = 'https://jttsgizkuyipolcnvanc.supabase.co';
 // Используем правильный анонимный ключ (без 'sb_publishable_' префикса)
-const SB_KEY = 'MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
+const SB_KEY = 'sb_publishable_MV93VmhU8U2I-2m8UquKkw_Eril4zvp';
 const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
 // Состояние
