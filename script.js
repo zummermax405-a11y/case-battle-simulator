@@ -328,21 +328,95 @@ async function createWithdraw() {
 // Админ (остается без изменений)
 async function adminPanel() {
     if (!state.user) return;
+    
     document.getElementById('admin-modal').style.display = 'block';
-    const { data: userData } = await supabase.from('users').select('role').eq('id', state.user.id).single();
-    if (userData?.role !== 'admin') { document.getElementById('admin-content').innerHTML = '<p>Нет прав</p>'; return; }
-    const { data } = await supabase.from('withdrawal_requests').select('*').order('id', { ascending: false });
-    document.getElementById('withdraw-list').innerHTML = (data || []).map(r => `
-        <div class="request-item">
-            #${r.id} - ${r.amount} монет<br>${r.telegram_contact}<br>
-            Статус: <span class="status-${r.status}">${r.status}</span>
-            ${r.status === 'pending' ? `
-                <button onclick="approveRequest(${r.id})">✅</button>
-                <button onclick="rejectRequest(${r.id})">❌</button>
-            ` : ''}
-        </div>
-    `).join('');
+    
+    // Проверяем права админа
+    const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', state.user.id)
+        .single();
+    
+    if (userData?.role !== 'admin') {
+        document.getElementById('admin-content').innerHTML = '<p>У вас нет прав администратора</p>';
+        return;
+    }
+    
+    // Показываем первую вкладку по умолчанию
+    showAdminTab('withdraw');
 }
+
+// ==================== АДМИН-ПАНЕЛЬ С ВКЛАДКАМИ ====================
+
+function showAdminTab(tabName) {
+    // Скрыть все вкладки
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Убрать активный класс у всех кнопок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Показать выбранную вкладку
+    const tabElement = document.getElementById(`admin-${tabName}`);
+    if (tabElement) {
+        tabElement.style.display = 'block';
+    }
+    
+    // Активировать кнопку
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    // Загрузить данные если нужно
+    if (tabName === 'withdraw') {
+        loadWithdrawRequests();
+    } else if (tabName === 'cases') {
+        loadCasesForAdmin();
+        loadAllSkinsForAdmin();
+    } else if (tabName === 'skins') {
+        loadAllSkinsForAdmin();
+    }
+}
+
+// Функция для загрузки заявок на вывод
+async function loadWithdrawRequests() {
+    try {
+        const { data, error } = await supabase
+            .from('withdrawal_requests')
+            .select('*')
+            .order('id', { ascending: false });
+        
+        if (error) throw error;
+        
+        const container = document.getElementById('withdraw-list');
+        if (container) {
+            container.innerHTML = (data || []).map(r => `
+                <div class="request-item">
+                    <strong>Заявка #${r.id}</strong><br>
+                    Игрок: ${r.player_id}<br>
+                    Сумма: ${r.amount} монет<br>
+                    Telegram: ${r.telegram_contact}<br>
+                    Статус: <span class="status-${r.status}">${r.status}</span>
+                    ${r.status === 'pending' ? `
+                        <div style="margin-top: 10px;">
+                            <button onclick="approveRequest(${r.id})" style="background: #00b894; margin-right: 5px;">✅ Одобрить</button>
+                            <button onclick="rejectRequest(${r.id})" style="background: #f72585;">❌ Отклонить</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки заявок:', error);
+    }
+}
+
+// Функции approveRequest и rejectRequest у вас уже должны быть
+
 
 async function approveRequest(id) {
     if (!confirm('Одобрить?')) return;
@@ -879,4 +953,86 @@ async function openCase() {
         console.error('Ошибка открытия кейса:', error);
         alert('Ошибка: ' + (error.message || 'Не удалось открыть кейс'));
     }
+
+
+    // ==================== DRAG & DROP ВСПОМОГАТЕЛЬНЫЕ ====================
+
+function allowDrop(e) {
+    e.preventDefault();
+    if (e.currentTarget) {
+        e.currentTarget.classList.add('drag-over');
+    }
+}
+
+function dragLeave(e) {
+    if (e.currentTarget) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+}
+
+function dragStart(e, skinId) {
+    e.dataTransfer.setData('skinId', skinId);
+    if (e.currentTarget) {
+        e.currentTarget.classList.add('dragging');
+    }
+}
+
+function dragEnd(e) {
+    if (e.currentTarget) {
+        e.currentTarget.classList.remove('dragging');
+    }
+}
+
+function dropOnCase(e) {
+    e.preventDefault();
+    if (e.currentTarget) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+    
+    if (!selectedCaseId) {
+        alert('Сначала выберите кейс из списка слева');
+        return;
+    }
+    
+    const skinId = e.dataTransfer.getData('skinId');
+    if (!skinId) return;
+    
+    // Добавляем скин в текущий кейс
+    addSkinToCase(parseInt(skinId));
+}
+
+// Добавление скина в кейс
+function addSkinToCase(skinId) {
+    if (currentCaseSkins.includes(skinId)) {
+        alert('Этот скин уже есть в кейсе!');
+        return;
+    }
+    
+    currentCaseSkins.push(skinId);
+    updateCaseSkinsDisplay();
+}
+
+// Удаление скина из кейса
+function removeSkinFromCase(skinId) {
+    currentCaseSkins = currentCaseSkins.filter(id => id !== skinId);
+    updateCaseSkinsDisplay();
+}
+
+// Обновление отображения скинов в кейсе
+function updateCaseSkinsDisplay() {
+    const container = document.getElementById('case-skins-list');
+    if (!container) return;
+    
+    if (currentCaseSkins.length === 0) {
+        container.innerHTML = '<p>В кейсе пока нет скинов</p>';
+        return;
+    }
+    
+    container.innerHTML = currentCaseSkins.map(skinId => `
+        <div class="case-skin-item" id="skin-in-case-${skinId}">
+            Скин #${skinId}
+            <span class="remove-skin" onclick="removeSkinFromCase(${skinId})">×</span>
+        </div>
+    `).join('');
+}
 }
