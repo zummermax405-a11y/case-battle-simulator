@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS:GO Case Battle Simulator - Виртуальный симулятор</title>
+    <title>CS:GO Case Battle Simulator - Линейная рулетка</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
-    <meta name="description" content="Бесплатный виртуальный симулятор открытия кейсов CS:GO. Игра с виртуальной валютой без реальных денег.">
+    <meta name="description" content="Виртуальный симулятор с линейной рулеткой CS:GO кейсов. Игра с виртуальной валютой без реальных денег.">
 </head>
 <body>
     <div class="container">
         <!-- Шапка -->
         <header>
             <h1>🎮 CS:GO Case Battle Simulator</h1>
-            <p class="subtitle">ВИРТУАЛЬНЫЙ СИМУЛЯТОР • БЕЗ РЕАЛЬНЫХ ДЕНЕГ • ТОЛЬКО ДЛЯ РАЗВЛЕЧЕНИЯ</p>
+            <p class="subtitle">ЛИНЕЙНАЯ РУЛЕТКА • ПРЕДПРОСМОТР КЕЙСОВ • ВИРТУАЛЬНАЯ ВАЛЮТА</p>
         </header>
 
         <!-- Статистика игрока -->
@@ -33,41 +33,73 @@
                 <p class="stat-value" id="cases-opened">0</p>
                 <span class="currency">всего</span>
             </div>
-        </div>
-
-        <!-- Бонусы и кнопки -->
-        <div class="actions">
-            <button class="btn btn-bonus" onclick="claimDailyBonus()">
-                🎁 Получить ежедневный бонус
-            </button>
-            <button class="btn btn-add-coins" onclick="addCoins(1000)">
-                💰 +1,000 монет (тест)
-            </button>
-            <button class="btn btn-reset" onclick="resetGame()">
-                🔄 Сбросить прогресс
-            </button>
+            <div class="stat-card bonus-card" onclick="claimHourlyBonus()" title="Нажмите для получения бонуса">
+                <h3>⏳ Бонус</h3>
+                <p class="stat-value" id="bonus-timer">Готово</p>
+                <span class="currency">Каждый час</span>
+            </div>
         </div>
 
         <!-- Раздел с кейсами -->
         <section class="cases-section">
             <h2>📦 Доступные кейсы</h2>
-            <p class="section-description">Выберите кейс для открытия. Каждый кейс содержит виртуальные предметы разной редкости.</p>
+            <p class="section-description">Нажмите на кейс, чтобы увидеть возможные выигрыши и открыть его</p>
             
             <div class="cases-grid" id="cases-container">
                 <!-- Кейсы будут генерироваться через JS -->
             </div>
         </section>
 
-        <!-- Анимация открытия кейса -->
-        <div class="case-opening-screen" id="opening-screen" style="display: none;">
-            <div class="opening-content">
-                <h2>Открываем кейс...</h2>
-                <div class="case-spinner" id="case-spinner">
-                    <div class="spinner-item" id="spinner-item">???</div>
+        <!-- Модальное окно предпросмотра кейса -->
+        <div class="modal" id="preview-modal">
+            <div class="modal-content">
+                <span class="close" onclick="closePreview()">&times;</span>
+                <h2 id="preview-title"></h2>
+                <p id="preview-description"></p>
+                <p>Стоимость: <span class="preview-price" id="preview-price"></span> монет</p>
+                
+                <h3>Возможные выигрыши:</h3>
+                <div class="preview-items" id="preview-items-container">
+                    <!-- Скины будут добавляться сюда -->
                 </div>
-                <div class="result" id="opening-result"></div>
-                <button class="btn btn-close" onclick="closeOpeningScreen()">
-                    Закрыть
+                
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closePreview()">
+                        Назад
+                    </button>
+                    <button class="btn btn-primary" id="open-case-btn" onclick="openCaseFromPreview()">
+                        🎰 Открыть кейс
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран линейной рулетки -->
+        <div class="modal roulette-modal" id="roulette-modal">
+            <div class="modal-content roulette-content">
+                <h2 id="roulette-title">🎰 Открываем кейс...</h2>
+                
+                <!-- Контейнер для рулетки -->
+                <div class="roulette-container">
+                    <div class="roulette-track" id="roulette-track">
+                        <!-- Скины будут добавляться динамически -->
+                    </div>
+                    <div class="roulette-pointer"></div>
+                </div>
+                
+                <div class="roulette-info">
+                    <div class="current-item" id="current-item">
+                        <div class="item-emoji">🎁</div>
+                        <div class="item-name">Начинаем...</div>
+                    </div>
+                </div>
+                
+                <div class="roulette-result" id="roulette-result">
+                    <!-- Результат появится здесь -->
+                </div>
+                
+                <button class="btn btn-close-roulette" onclick="closeRoulette()" style="display: none;">
+                    Забрать выигрыш
                 </button>
             </div>
         </div>
@@ -82,9 +114,11 @@
                 <button class="btn btn-sort" onclick="sortInventory('value')">
                     Сортировать по ценности
                 </button>
+                <button class="btn btn-sort" onclick="sortInventory('newest')">
+                    Новые сначала
+                </button>
             </div>
             <div class="inventory-grid" id="inventory-container">
-                <!-- Скины будут появляться здесь -->
                 <p class="empty-inventory">Ваш инвентарь пуст. Откройте кейсы, чтобы получить предметы!</p>
             </div>
         </section>
@@ -112,7 +146,7 @@
 
         <!-- Футер -->
         <footer>
-            <p>CS:GO Case Battle Simulator © 2024 • Виртуальный симулятор • Создано для образовательных целей</p>
+            <p>CS:GO Case Battle Simulator © 2024 • Линейная рулетка • Создано для образовательных целей</p>
             <p>Это не официальный проект Valve или Steam. Counter-Strike и CS:GO являются товарными знаками Valve Corporation.</p>
         </footer>
     </div>
