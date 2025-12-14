@@ -65,19 +65,87 @@
         </div>
 
         <div id="admin-modal" class="modal">
-            <div class="modal-content">
-                <h3>Админ</h3>
-                <div id="admin-content">
-                    <h4>Заявки на вывод</h4>
-                    <div id="withdraw-list"></div>
-                    <h4>Новый кейс</h4>
-                    <input id="case-name" placeholder="Название">
-                    <input id="case-price" placeholder="Цена">
-                    <button onclick="createNewCase()">Создать</button>
-                    <button onclick="closeModal('admin-modal')">Закрыть</button>
+    <div class="modal-content" style="max-width: 900px;">
+        <h3>Админ-панель</h3>
+        
+        <!-- Навигация -->
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #4cc9f0; padding-bottom: 10px;">
+            <button onclick="showAdminTab('withdraw')" class="tab-btn">Вывод</button>
+            <button onclick="showAdminTab('cases')" class="tab-btn">Кейсы</button>
+            <button onclick="showAdminTab('skins')" class="tab-btn">Скины</button>
+        </div>
+        
+        <!-- Вкладка вывод -->
+        <div id="admin-withdraw" class="admin-tab">
+            <h4>Заявки на вывод</h4>
+            <div id="withdraw-list"></div>
+        </div>
+        
+        <!-- Вкладка кейсы -->
+        <div id="admin-cases" class="admin-tab" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Список кейсов -->
+                <div>
+                    <h4>Существующие кейсы</h4>
+                    <div id="cases-list-admin" class="drag-container"></div>
+                    
+                    <h4 style="margin-top: 20px;">Новый кейс</h4>
+                    <input id="case-name" placeholder="Название кейса">
+                    <input id="case-price" type="number" placeholder="Цена">
+                    <input id="case-emoji" placeholder="Эмодзи (📦)">
+                    <button onclick="createNewCase()" style="width: 100%; margin-top: 10px;">Создать кейс</button>
+                </div>
+                
+                <!-- Drag & Drop зона для кейса -->
+                <div>
+                    <h4>Настройка кейса</h4>
+                    <div id="selected-case-info" style="background: rgba(76,201,240,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <p>Выберите кейс слева</p>
+                    </div>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; min-height: 300px;"
+                         id="case-drop-zone"
+                         ondrop="dropOnCase(event)"
+                         ondragover="allowDrop(event)">
+                        <p>Перетащите скины сюда</p>
+                        <div id="case-skins-list"></div>
+                    </div>
+                    <button onclick="saveCaseSkins()" id="save-case-btn" style="display:none; width: 100%; margin-top: 10px;">💾 Сохранить состав кейса</button>
                 </div>
             </div>
         </div>
+        
+        <!-- Вкладка скины -->
+        <div id="admin-skins" class="admin-tab" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Создание скина -->
+                <div>
+                    <h4>Создать новый скин</h4>
+                    <input id="skin-name" placeholder="Название скина">
+                    <input id="skin-price" type="number" placeholder="Цена" value="100">
+                    <select id="skin-rarity" style="width: 100%; padding: 10px; margin: 10px 0; background: rgba(255,255,255,0.1); color: white; border: 1px solid #4cc9f0; border-radius: 5px;">
+                        <option value="common">Обычный</option>
+                        <option value="rare">Редкий</option>
+                        <option value="epic">Эпический</option>
+                        <option value="legendary">Легендарный</option>
+                    </select>
+                    <input id="skin-emoji" placeholder="Эмодзи (🎮)" value="🎮">
+                    <input id="skin-image" placeholder="URL картинки (опционально)">
+                    <button onclick="createNewSkin()" style="width: 100%; margin-top: 10px;">Создать скин</button>
+                </div>
+                
+                <!-- Список скинов -->
+                <div>
+                    <h4>Все скины</h4>
+                    <div id="skins-list-admin" class="drag-container"></div>
+                    <p style="font-size: 0.9em; opacity: 0.7; margin-top: 10px;">Перетащите скин в зону кейса</p>
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="closeModal('admin-modal')" style="margin-top: 20px;">Закрыть</button>
+    </div>
+</div>
     </div>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>

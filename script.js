@@ -8,6 +8,7 @@ let state = { user: null, balance: 0, inventory: [] };
 let cases = [], skins = [], selectedCase = null;
 
 // Инициализация
+// Инициализация
 async function init() {
     console.log('Инициализация...');
     await checkAuth();
@@ -15,6 +16,24 @@ async function init() {
     if (state.user) await loadPlayer();
     setupModalListeners();
     updateUI();
+    
+    // Инициализация админки (ДОБАВЬТЕ ЭТИ 2 СТРОКИ)
+    setupAdminDragDrop();
+}
+
+// ДОБАВЬТЕ ЭТУ ФУНКЦИЮ ПОСЛЕ init()
+function setupAdminDragDrop() {
+    // Ждем пока DOM полностью загрузится
+    setTimeout(() => {
+        const dropZone = document.getElementById('case-drop-zone');
+        if (dropZone) {
+            dropZone.addEventListener('dragover', allowDrop);
+            dropZone.addEventListener('dragleave', dragLeave);
+            console.log('Drag & drop инициализирован');
+        } else {
+            console.warn('Элемент case-drop-zone не найден');
+        }
+    }, 100);
 }
 
 // Модалки
@@ -347,3 +366,517 @@ async function createNewCase() {
 
 // Запуск
 document.addEventListener('DOMContentLoaded', init);
+
+
+// Переменные для Drag & Drop
+let selectedCaseId = null;
+let currentCaseSkins = [];
+
+// ==================== DRAG & DROP ФУНКЦИИ ====================
+
+function allowDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
+
+function dragStart(e, skinId) {
+    e.dataTransfer.setData('skinId', skinId);
+    e.currentTarget.classList.add('dragging');
+}
+
+function dragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+}
+
+function dropOnCase(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    if (!selectedCaseId) {
+        alert('Сначала выберите кейс из списка слева');
+        return;
+    }
+    
+    const skinId = e.dataTransfer.getData('skinId');
+    if (!skinId) return;
+    
+    // Добавляем скин в текущий кейс
+    addSkinToCase(parseInt(skinId));
+}
+
+// ==================== АДМИН-ПАНЕЛЬ ====================
+
+function showAdminTab(tabName) {
+    // Скрыть все вкладки
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Убрать активный класс у всех кнопок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Показать выбранную вкладку
+    document.getElementById(`admin-${tabName}`).style.display = 'block';
+    
+    // Активировать кнопку
+    event.target.classList.add('active');
+    
+    // Загрузить данные если нужно
+    if (tabName === 'cases') {
+        loadCasesForAdmin();
+        loadAllSkinsForAdmin();
+    } else if (tabName === 'skins') {
+        loadAllSkinsForAdmin();
+    }
+}
+
+// ==================== РАБОТА С КЕЙСАМИ ====================
+
+async function loadCasesForAdmin() {
+    try {
+        const { data, error } = await supabase
+            .from('cases')
+            .select('*')
+            .order('id');
+            
+        if (error) throw error;
+        
+        const container = document.getElementById('cases-list-admin');
+        if (!container) return;
+        
+        container.innerHTML = data.map(caseItem => `
+            <div class="drag-item case-admin-item" 
+                 onclick="selectCase(${caseItem.id})"
+                 style="cursor: pointer; ${selectedCaseId === caseItem.id ? 'border-color: #4cc9f0;' : ''}">
+                <div style="font-size: 24px;">${caseItem.emoji || '📦'}</div>
+                <div style="font-size: 0.9em;">${caseItem.name}</div>
+                <div style="font-size: 0.8em; opacity: 0.7;">${caseItem.price} монет</div>
+                <button onclick="event.stopPropagation(); deleteCase(${caseItem.id})" 
+                        style="background: #f72585; padding: 3px 8px; font-size: 0.8em; margin-top: 5px;">
+                    Удалить
+                </button>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Ошибка загрузки кейсов:', error);
+    }
+}
+
+async function selectCase(caseId) {
+    selectedCaseId = caseId;
+    
+    // Подсветка выбранного кейса
+    document.querySelectorAll('.case-admin-item').forEach(item => {
+        item.style.borderColor = 'transparent';
+    });
+    event.currentTarget.style.borderColor = '#4cc9f0';
+    
+    // Загружаем информацию о кейсе
+    const { data: caseData } = await supabase
+        .from('cases')
+        .select('*')
+        .eq('id', caseId)
+        .single();
+        
+    if (caseData) {
+        document.getElementById('selected-case-info').innerHTML = `
+            <h4>${caseData.emoji || '📦'} ${caseData.name}</h4>
+            <p>Цена: ${caseData.price} монет</p>
+            <p>ID: ${caseData.id}</p>
+        `;
+    }
+    
+    // Загружаем скины этого кейса
+    await loadCaseSkins(caseId);
+    
+    // Показываем кнопку сохранения
+    document.getElementById('save-case-btn').style.display = 'block';
+}
+
+async function loadCaseSkins(caseId) {
+    try {
+        const { data, error } = await supabase
+            .from('case_skins')
+            .select(`
+                skin_id,
+                skins (*)
+            `)
+            .eq('case_id', caseId);
+            
+        if (error) throw error;
+        
+        currentCaseSkins = data.map(item => item.skin_id);
+        
+        const container = document.getElementById('case-skins-list');
+        if (!container) return;
+        
+        if (data.length === 0) {
+            container.innerHTML = '<p>В кейсе пока нет скинов</p>';
+            return;
+        }
+        
+        container.innerHTML = data.map(item => `
+            <div class="case-skin-item" id="skin-in-case-${item.skin_id}">
+                ${item.skins?.emoji || '🎮'} ${item.skins?.name || 'Скин'} 
+                <span class="remove-skin" onclick="removeSkinFromCase(${item.skin_id})">×</span>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Ошибка загрузки скинов кейса:', error);
+    }
+}
+
+function addSkinToCase(skinId) {
+    if (currentCaseSkins.includes(skinId)) {
+        alert('Этот скин уже есть в кейсе!');
+        return;
+    }
+    
+    currentCaseSkins.push(skinId);
+    updateCaseSkinsDisplay();
+}
+
+function removeSkinFromCase(skinId) {
+    currentCaseSkins = currentCaseSkins.filter(id => id !== skinId);
+    updateCaseSkinsDisplay();
+}
+
+function updateCaseSkinsDisplay() {
+    const container = document.getElementById('case-skins-list');
+    if (!container) return;
+    
+    // Здесь нужно загрузить информацию о скинах
+    // Временное решение - показать ID скинов
+    if (currentCaseSkins.length === 0) {
+        container.innerHTML = '<p>В кейсе пока нет скинов</p>';
+        return;
+    }
+    
+    container.innerHTML = currentCaseSkins.map(skinId => `
+        <div class="case-skin-item" id="skin-in-case-${skinId}">
+            Скин #${skinId}
+            <span class="remove-skin" onclick="removeSkinFromCase(${skinId})">×</span>
+        </div>
+    `).join('');
+}
+
+async function saveCaseSkins() {
+    if (!selectedCaseId) {
+        alert('Сначала выберите кейс');
+        return;
+    }
+    
+    try {
+        // Удаляем старые связи
+        await supabase
+            .from('case_skins')
+            .delete()
+            .eq('case_id', selectedCaseId);
+        
+        // Создаем новые связи
+        const caseSkinsData = currentCaseSkins.map(skinId => ({
+            case_id: selectedCaseId,
+            skin_id: skinId,
+            weight: 100
+        }));
+        
+        if (caseSkinsData.length > 0) {
+            const { error } = await supabase
+                .from('case_skins')
+                .insert(caseSkinsData);
+                
+            if (error) throw error;
+        }
+        
+        alert(`Сохранено! В кейс добавлено ${currentCaseSkins.length} скинов`);
+        await loadCaseSkins(selectedCaseId);
+        
+    } catch (error) {
+        console.error('Ошибка сохранения кейса:', error);
+        alert('Ошибка сохранения: ' + error.message);
+    }
+}
+
+// ==================== РАБОТА СО СКИНАМИ ====================
+
+async function loadAllSkinsForAdmin() {
+    try {
+        const { data, error } = await supabase
+            .from('skins')
+            .select('*')
+            .order('id');
+            
+        if (error) throw error;
+        
+        const container = document.getElementById('skins-list-admin');
+        if (!container) return;
+        
+        container.innerHTML = data.map(skin => `
+            <div class="drag-item" 
+                 draggable="true"
+                 ondragstart="dragStart(event, ${skin.id})"
+                 ondragend="dragEnd(event)"
+                 id="skin-${skin.id}">
+                <div style="font-size: 24px;">${skin.emoji || '🎮'}</div>
+                <div style="font-size: 0.9em;">${skin.name}</div>
+                <div style="font-size: 0.8em; opacity: 0.7;">${skin.price} монет</div>
+                <div style="font-size: 0.7em; color: ${getRarityColor(skin.rarity)};">
+                    ${getRarityName(skin.rarity)}
+                </div>
+                <button onclick="event.stopPropagation(); deleteSkin(${skin.id})" 
+                        style="background: #f72585; padding: 3px 8px; font-size: 0.8em; margin-top: 5px;">
+                    Удалить
+                </button>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Ошибка загрузки скинов:', error);
+    }
+}
+
+function getRarityColor(rarity) {
+    switch(rarity) {
+        case 'common': return '#4cc9f0';
+        case 'rare': return '#4361ee';
+        case 'epic': return '#7209b7';
+        case 'legendary': return '#f72585';
+        default: return '#ffffff';
+    }
+}
+
+function getRarityName(rarity) {
+    switch(rarity) {
+        case 'common': return 'Обычный';
+        case 'rare': return 'Редкий';
+        case 'epic': return 'Эпический';
+        case 'legendary': return 'Легендарный';
+        default: return 'Обычный';
+    }
+}
+
+async function createNewSkin() {
+    const name = document.getElementById('skin-name').value.trim();
+    const price = parseInt(document.getElementById('skin-price').value);
+    const rarity = document.getElementById('skin-rarity').value;
+    const emoji = document.getElementById('skin-emoji').value.trim() || '🎮';
+    const image = document.getElementById('skin-image').value.trim();
+    
+    if (!name || !price || price <= 0) {
+        alert('Введите название и цену скина');
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('skins')
+            .insert([{
+                name,
+                price,
+                rarity,
+                emoji,
+                image_url: image || null
+            }]);
+            
+        if (error) throw error;
+        
+        alert('Скин успешно создан!');
+        
+        // Очищаем форму
+        document.getElementById('skin-name').value = '';
+        document.getElementById('skin-price').value = '100';
+        document.getElementById('skin-emoji').value = '🎮';
+        document.getElementById('skin-image').value = '';
+        
+        // Обновляем список
+        await loadAllSkinsForAdmin();
+        
+    } catch (error) {
+        console.error('Ошибка создания скина:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// ==================== УДАЛЕНИЕ ====================
+
+async function deleteCase(caseId) {
+    if (!confirm('Удалить этот кейс? Все связи со скинами также удалятся.')) return;
+    
+    try {
+        const { error } = await supabase
+            .from('cases')
+            .delete()
+            .eq('id', caseId);
+            
+        if (error) throw error;
+        
+        alert('Кейс удален');
+        await loadCasesForAdmin();
+        
+        if (selectedCaseId === caseId) {
+            selectedCaseId = null;
+            document.getElementById('selected-case-info').innerHTML = '<p>Выберите кейс слева</p>';
+            document.getElementById('case-skins-list').innerHTML = '';
+            document.getElementById('save-case-btn').style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('Ошибка удаления кейса:', error);
+        alert('Ошибка удаления: ' + error.message);
+    }
+}
+
+async function deleteSkin(skinId) {
+    if (!confirm('Удалить этот скин? Он также удалится из всех кейсов.')) return;
+    
+    try {
+        const { error } = await supabase
+            .from('skins')
+            .delete()
+            .eq('id', skinId);
+            
+        if (error) throw error;
+        
+        alert('Скин удален');
+        await loadAllSkinsForAdmin();
+        
+        // Если этот скин был в текущем кейсе
+        if (currentCaseSkins.includes(skinId)) {
+            currentCaseSkins = currentCaseSkins.filter(id => id !== skinId);
+            updateCaseSkinsDisplay();
+        }
+        
+    } catch (error) {
+        console.error('Ошибка удаления скина:', error);
+        alert('Ошибка удаления: ' + error.message);
+    }
+}
+
+// ==================== ОБНОВЛЕННАЯ createNewCase ====================
+
+async function createNewCase() {
+    const name = document.getElementById('case-name').value.trim();
+    const price = parseInt(document.getElementById('case-price').value);
+    const emoji = document.getElementById('case-emoji').value.trim() || '📦';
+    
+    if (!name || !price || price <= 0) {
+        alert('Введите название и цену кейса');
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('cases')
+            .insert([{
+                name,
+                price,
+                emoji
+            }]);
+            
+        if (error) throw error;
+        
+        alert('Кейс создан!');
+        
+        // Очищаем форму
+        document.getElementById('case-name').value = '';
+        document.getElementById('case-price').value = '';
+        document.getElementById('case-emoji').value = '📦';
+        
+        // Обновляем список
+        await loadCasesForAdmin();
+        
+    } catch (error) {
+        console.error('Ошибка создания кейса:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// ==================== ОБНОВЛЕНИЕ ОТКРЫТИЯ КЕЙСА ====================
+
+async function openCase() {
+    if (!selectedCase || !state.user) return alert('Ошибка');
+    if (state.balance < selectedCase.price) { 
+        alert('Недостаточно средств'); 
+        closeModal('preview-modal'); 
+        return; 
+    }
+    
+    try {
+        // Получаем скины из этого кейса
+        const { data: caseSkins, error: skinsError } = await supabase
+            .from('case_skins')
+            .select(`
+                skin_id,
+                weight,
+                skins (*)
+            `)
+            .eq('case_id', selectedCase.id);
+            
+        if (skinsError) throw skinsError;
+        
+        if (!caseSkins || caseSkins.length === 0) {
+            alert('В этом кейсе нет скинов!');
+            return;
+        }
+        
+        // Выбираем случайный скин с учетом веса
+        const totalWeight = caseSkins.reduce((sum, item) => sum + (item.weight || 100), 0);
+        let random = Math.random() * totalWeight;
+        let selectedSkin = null;
+        
+        for (const item of caseSkins) {
+            random -= (item.weight || 100);
+            if (random <= 0) {
+                selectedSkin = item.skins;
+                break;
+            }
+        }
+        
+        if (!selectedSkin) {
+            selectedSkin = caseSkins[0].skins;
+        }
+        
+        // Обновляем баланс пользователя
+        const newBalance = state.balance - selectedCase.price;
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ balance: newBalance })
+            .eq('id', state.user.id);
+            
+        if (updateError) throw updateError;
+        
+        // Добавляем скин в инвентарь
+        const { error: invError } = await supabase
+            .from('player_inventory')
+            .insert([{
+                player_id: state.user.id,
+                skin_id: selectedSkin.id,
+                created_at: new Date().toISOString()
+            }]);
+            
+        if (invError) throw invError;
+        
+        // Обновляем состояние
+        state.balance = newBalance;
+        updateUI();
+        
+        // Показываем результат
+        alert(`🎉 Вы выиграли: ${selectedSkin.emoji || '🎮'} ${selectedSkin.name} (${getRarityName(selectedSkin.rarity)})!`);
+        closeModal('preview-modal');
+        
+        // Перезагружаем данные игрока
+        await loadPlayer();
+        
+    } catch (error) {
+        console.error('Ошибка открытия кейса:', error);
+        alert('Ошибка: ' + (error.message || 'Не удалось открыть кейс'));
+    }
+}
